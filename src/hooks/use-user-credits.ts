@@ -22,8 +22,6 @@ export function useUserCredits() {
   });
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    
     if (!isLoaded) {
       // Still loading authentication state
       return;
