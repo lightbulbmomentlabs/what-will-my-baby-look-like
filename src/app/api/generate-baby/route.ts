@@ -1,0 +1,369 @@
+/**
+ * API Route for secure baby image generation via Replicate
+ * Now requires authentication and credits
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { generateBabyImage, checkReplicateStatus } from '@/lib/replicate-client';
+import { trackGeneration, saveGeneratedImage } from '@/lib/supabase';
+import { hasEnoughCredits, deductCredits, getOrCreateUser } from '@/lib/credits';
+import { storeImagePermanently } from '@/lib/image-storage';
+
+// Credits required per generation
+const CREDITS_PER_GENERATION = 1;
+
+/**
+ * Validate base64 image data
+ */
+function validateImageData(imageData: string): boolean {
+  if (!imageData || typeof imageData !== 'string') {
+    return false;
+  }
+  
+  // Check if it's a valid base64 data URL
+  const base64Regex = /^data:image\/(jpeg|jpg|png|webp);base64,/;
+  return base64Regex.test(imageData);
+}
+
+/**
+ * Rate limiting check (simple in-memory store for demo)
+ * In production, you'd want to use Redis or similar
+ */
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(sessionId: string): { allowed: boolean; resetTime: number } {
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+  const maxRequests = 3; // Max 3 requests per minute
+  
+  const userLimit = rateLimitStore.get(sessionId);
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    // New window
+    rateLimitStore.set(sessionId, { count: 1, resetTime: now + windowMs });
+    return { allowed: true, resetTime: now + windowMs };
+  }
+  
+  if (userLimit.count >= maxRequests) {
+    return { allowed: false, resetTime: userLimit.resetTime };
+  }
+  
+  // Increment count
+  userLimit.count++;
+  rateLimitStore.set(sessionId, userLimit);
+  return { allowed: true, resetTime: userLimit.resetTime };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get authenticated user
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required. Please sign in to generate baby images.',
+        requiresAuth: true,
+      }, { status: 401 });
+    }
+
+    // Check rate limiting
+    const rateLimit = checkRateLimit(userId);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Too many requests. Please wait a minute before trying again.',
+          rateLimited: true,
+          resetTime: rateLimit.resetTime,
+        },
+        { status: 429 }
+      );
+    }
+    
+    // Parse request body
+    const body = await request.json();
+    
+    // Validate required fields
+    const { parentImage1, parentImage2, similarity, age, gender, parent1Name, parent2Name } = body;
+    
+    if (!parentImage1 || !parentImage2) {
+      return NextResponse.json({
+        success: false,
+        error: 'Both parent images are required',
+      }, { status: 400 });
+    }
+    
+    // Validate image data
+    if (!validateImageData(parentImage1) || !validateImageData(parentImage2)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid image data format',
+      }, { status: 400 });
+    }
+    
+    // Validate other parameters
+    if (typeof similarity !== 'number' || similarity < 0 || similarity > 100) {
+      return NextResponse.json({
+        success: false,
+        error: 'Similarity must be a number between 0 and 100',
+      }, { status: 400 });
+    }
+    
+    if (typeof age !== 'number' || age < 1 || age > 5) {
+      return NextResponse.json({
+        success: false,
+        error: 'Age must be a number between 1 and 5',
+      }, { status: 400 });
+    }
+    
+    if (!['male', 'female', 'random'].includes(gender)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Gender must be male, female, or random',
+      }, { status: 400 });
+    }
+
+    // Ensure user exists in database (create with free credit if needed)
+    const userResult = await getOrCreateUser(userId);
+    if (!userResult.success) {
+      return NextResponse.json({
+        success: false,
+        error: userResult.error || 'Failed to access user account',
+      }, { status: 500 });
+    }
+
+    // Check if user has enough credits
+    const creditsCheck = await hasEnoughCredits(userId, CREDITS_PER_GENERATION);
+    if (!creditsCheck.success) {
+      return NextResponse.json({
+        success: false,
+        error: creditsCheck.error || 'Failed to check credits',
+      }, { status: 500 });
+    }
+
+    if (!creditsCheck.hasCredits) {
+      return NextResponse.json({
+        success: false,
+        error: `Insufficient credits. You have ${creditsCheck.currentCredits || 0} credits but need ${CREDITS_PER_GENERATION}.`,
+        insufficientCredits: true,
+        currentCredits: creditsCheck.currentCredits || 0,
+        requiredCredits: CREDITS_PER_GENERATION,
+      }, { status: 402 }); // 402 Payment Required
+    }
+    
+    // Check Replicate service status
+    const serviceStatus = await checkReplicateStatus();
+    if (!serviceStatus.available) {
+      return NextResponse.json({
+        success: false,
+        error: 'AI generation service is currently unavailable. Please try again later.',
+        serviceUnavailable: true,
+      }, { status: 503 });
+    }
+    
+    // Generate baby image
+    const generationRequest = {
+      parentImage1,
+      parentImage2,
+      similarity,
+      age,
+      gender,
+      parent1Name,
+      parent2Name,
+    };
+    
+    const result = await generateBabyImage(generationRequest);
+    
+    // Additional safety check for imageUrl
+    if (result.success && result.imageUrl) {
+      if (typeof result.imageUrl !== 'string') {
+        console.error('❌ imageUrl is not a string:', typeof result.imageUrl, result.imageUrl);
+        result.success = false;
+        result.error = 'Invalid image URL format received from AI service';
+        delete result.imageUrl;
+      } else if (!result.imageUrl.startsWith('http')) {
+        console.error('❌ imageUrl is not a valid URL:', result.imageUrl);
+        result.success = false;
+        result.error = 'Invalid image URL received from AI service';
+        delete result.imageUrl;
+      }
+    }
+    
+    // If generation was successful, deduct credits
+    if (result.success) {
+      const deductResult = await deductCredits(userId, CREDITS_PER_GENERATION);
+      if (!deductResult.success) {
+        console.error('Failed to deduct credits after successful generation:', deductResult.error);
+        // Still return success but log the error
+      }
+
+      // Track generation for analytics
+      await trackGeneration({
+        similarity,
+        age,
+        generation_time: result.processingTime || 0,
+        success: true,
+      });
+
+      // Get user info for saving generation
+      const userResult = await getOrCreateUser(userId);
+      const user = userResult.user;
+
+      // Store image permanently in Supabase Storage
+      let finalImageUrl = result.imageUrl || '';
+      if (result.imageUrl) {
+        console.log('🔄 Storing image permanently for user:', userId);
+        const storageResult = await storeImagePermanently(
+          result.imageUrl,
+          userId,
+          {
+            babyName: result.babyName?.name,
+            age,
+            gender,
+          }
+        );
+
+        if (storageResult.success && storageResult.permanentUrl) {
+          finalImageUrl = storageResult.permanentUrl;
+          console.log('✅ Image stored permanently at:', finalImageUrl);
+        } else {
+          console.error('❌ Failed to store image permanently, using temporary URL:', storageResult.error);
+          // Continue with temporary URL as fallback
+        }
+      }
+
+      // Save generated image metadata to Supabase with user ID
+      await saveGeneratedImage({
+        sessionId: userId, // Use user ID as session ID
+        babyName: result.babyName?.name,
+        babyNameExplanation: result.babyName?.explanation,
+        similarity,
+        age,
+        gender,
+        parent1Name,
+        parent2Name,
+        originalImageUrl: finalImageUrl,
+        processingTime: result.processingTime,
+        success: true,
+        userId: user?.id, // Add user ID to the generation record
+        creditsUsed: CREDITS_PER_GENERATION,
+      });
+
+      // Update the response to include the permanent URL
+      result.imageUrl = finalImageUrl;
+
+      // Add remaining credits info to response
+      result.remainingCredits = deductResult.remainingCredits;
+    } else {
+      // Track failed generation
+      await trackGeneration({
+        similarity,
+        age,
+        generation_time: result.processingTime || 0,
+        success: false,
+        error: result.error,
+      });
+
+      // Get user info for saving generation
+      const userResult = await getOrCreateUser(userId);
+      const user = userResult.user;
+
+      // Save failed generation metadata (no credits deducted)
+      await saveGeneratedImage({
+        sessionId: userId, // Use user ID as session ID
+        similarity,
+        age,
+        gender,
+        parent1Name,
+        parent2Name,
+        originalImageUrl: '',
+        processingTime: result.processingTime,
+        success: false,
+        error: result.error,
+        userId: user?.id,
+        creditsUsed: 0, // No credits deducted for failed generations
+      });
+    }
+    
+    return NextResponse.json(result);
+    
+  } catch (error) {
+    console.error('Generation API Error:', error);
+    
+    // Track error (don't await to avoid blocking response)
+    trackGeneration({
+      similarity: 0,
+      age: 0,
+      generation_time: 0,
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }).catch((trackingError) => {
+      console.error('Failed to track generation error:', trackingError);
+    });
+    
+    return NextResponse.json({
+      success: false,
+      error: 'An unexpected error occurred. Please try again.',
+    }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  // Health check endpoint
+  try {
+    const { userId } = await auth();
+    const serviceStatus = await checkReplicateStatus();
+    
+    let userCredits = null;
+    if (userId) {
+      // Get user data from Clerk to create user with proper info if needed
+      const user = await currentUser();
+      const primaryEmail = user?.emailAddresses.find(email => 
+        email.id === user.primaryEmailAddressId
+      ) || user?.emailAddresses[0];
+      
+      console.log('GET /api/generate-baby - User ID:', userId);
+      console.log('GET /api/generate-baby - User Email:', primaryEmail?.emailAddress);
+      
+      // Ensure user exists in database first with proper user info
+      const userResult = await getOrCreateUser(userId, primaryEmail?.emailAddress ? {
+        email: primaryEmail.emailAddress,
+        firstName: user?.firstName || undefined,
+        lastName: user?.lastName || undefined,
+      } : undefined);
+      
+      if (!userResult.success) {
+        console.error('Failed to create/get user:', userResult.error);
+      }
+      
+      const creditsCheck = await hasEnoughCredits(userId, 0); // Just check credits, don't require any
+      if (creditsCheck.success) {
+        userCredits = creditsCheck.currentCredits;
+      } else {
+        console.error('Failed to check credits:', creditsCheck.error);
+      }
+    }
+    
+    return NextResponse.json({
+      status: 'healthy',
+      service: {
+        available: serviceStatus.available,
+        error: serviceStatus.error,
+      },
+      user: userId ? {
+        authenticated: true,
+        credits: userCredits,
+      } : {
+        authenticated: false,
+      },
+      creditsPerGeneration: CREDITS_PER_GENERATION,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: 'error',
+      error: 'Service health check failed',
+    }, { status: 500 });
+  }
+}
