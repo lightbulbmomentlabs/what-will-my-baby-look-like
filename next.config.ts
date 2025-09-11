@@ -15,6 +15,8 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // Fix workspace root warning in production
+  outputFileTracingRoot: __dirname,
 };
 
 export default nextConfig;
