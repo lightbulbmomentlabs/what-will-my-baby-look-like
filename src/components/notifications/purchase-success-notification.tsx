@@ -128,7 +128,7 @@ export function PurchaseSuccessNotification({
               onClick={onClose}
               className="w-full border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
-              I'll generate later
+              I&apos;ll generate later
             </Button>
           </div>
 

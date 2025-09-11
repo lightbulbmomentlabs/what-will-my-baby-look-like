@@ -81,7 +81,7 @@ export function useUserCredits() {
     };
 
     // Show loading state if request takes longer than 500ms
-    timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setState(prev => ({ ...prev, isLoading: true }));
     }, 500);
 

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const notificationResult = await getImagesNeedingNotification();
     
     let notificationsSent = 0;
-    let notificationErrors: string[] = [];
+    const notificationErrors: string[] = [];
 
     if (notificationResult.success && notificationResult.notifications.length > 0) {
       console.log(`📧 Found ${notificationResult.notifications.length} users needing expiration notifications`);

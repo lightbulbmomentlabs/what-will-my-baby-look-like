@@ -2,13 +2,19 @@ import imageCompression from 'browser-image-compression';
 import * as faceapi from 'face-api.js';
 
 // Dynamic HEIC import for all devices
-let heic2any: any = null;
+type HEIC2AnyFunction = (options: {
+  blob: Blob;
+  toType: string;
+  quality: number;
+}) => Promise<Blob>;
+
+let heic2any: HEIC2AnyFunction | null = null;
 
 export async function loadHEICConverter() {
   if (!heic2any) {
     try {
       const heicModule = await import('heic2any');
-      heic2any = heicModule.default;
+      heic2any = heicModule.default as HEIC2AnyFunction;
     } catch (error) {
       console.warn('HEIC2Any library not available:', error);
     }

@@ -7,7 +7,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(req: NextRequest) {
   try {
-    const results: any = {};
+    const results: Record<string, unknown> = {};
 
     // Test 1: Check if we can connect to Supabase
     try {

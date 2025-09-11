@@ -22,12 +22,17 @@ import {
 import { useUserCredits } from '@/hooks/use-user-credits';
 import { BuyCreditsModal } from '@/components/credits/buy-credits-modal';
 
-function getDisplayName(user: any): string {
-  if (user?.firstName) {
-    return user.firstName;
+function getDisplayName(user: unknown): string {
+  const userObj = user as { 
+    firstName?: string; 
+    emailAddresses?: { emailAddress: string }[] 
+  };
+  
+  if (userObj?.firstName) {
+    return userObj.firstName;
   }
-  if (user?.emailAddresses?.[0]?.emailAddress) {
-    const email = user.emailAddresses[0].emailAddress;
+  if (userObj?.emailAddresses?.[0]?.emailAddress) {
+    const email = userObj.emailAddresses[0].emailAddress;
     const username = email.split('@')[0];
     return username.length > 15 ? username.substring(0, 15) + '...' : username;
   }

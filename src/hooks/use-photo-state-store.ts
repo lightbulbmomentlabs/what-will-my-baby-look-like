@@ -42,8 +42,8 @@ const base64ToFile = (base64: string, filename: string): File => {
 };
 
 // Helper to serialize UploadedImage with File objects
-const serializeUploadedImage = async (image: UploadedImage): Promise<any> => {
-  const serialized: any = {
+const serializeUploadedImage = async (image: UploadedImage): Promise<Record<string, unknown>> => {
+  const serialized: Record<string, unknown> = {
     label: image.label,
     name: image.name,
     preview: image.preview,
@@ -64,7 +64,7 @@ const serializeUploadedImage = async (image: UploadedImage): Promise<any> => {
 };
 
 // Helper to deserialize UploadedImage with File objects
-const deserializeUploadedImage = (data: any): UploadedImage => {
+const deserializeUploadedImage = (data: Record<string, unknown>): UploadedImage => {
   const image: UploadedImage = {
     label: data.label,
     name: data.name,
@@ -98,7 +98,7 @@ export function usePhotoStateStore() {
   // Save state to localStorage
   const saveState = useCallback(async (state: Omit<PhotoState, 'timestamp'>) => {
     try {
-      const serializedState: any = {
+      const serializedState: Record<string, unknown> = {
         similarity: state.similarity,
         selectedAge: state.selectedAge,
         selectedGender: state.selectedGender,

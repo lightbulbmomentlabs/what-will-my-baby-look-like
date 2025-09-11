@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  */
 export async function trackEvent(
   event: string,
-  metadata?: Record<string, any>,
+  metadata?: Record<string, unknown>,
 ) {
   try {
     const sessionId =

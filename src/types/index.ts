@@ -43,7 +43,7 @@ export interface AnalyticsEvent {
   timestamp: Date;
   userId?: string;
   sessionId: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export type AgeOption = {

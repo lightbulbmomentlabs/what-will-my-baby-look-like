@@ -12,12 +12,12 @@ const replicate = new Replicate({
 
 interface TestResult {
   success: boolean;
-  rawOutput: any;
+  rawOutput: unknown;
   outputType: string;
   isArray: boolean;
   arrayLength?: number;
   firstItemType?: string;
-  firstItemContent?: any;
+  firstItemContent?: unknown;
   extractedUrl?: string;
   error?: string;
 }
@@ -99,7 +99,7 @@ export async function testReplicateResponse(): Promise<TestResult> {
 /**
  * Safe URL extraction that handles all possible response formats
  */
-export async function extractImageUrl(output: any): Promise<string | null> {
+export async function extractImageUrl(output: unknown): Promise<string | null> {
   console.log('🔍 Extracting URL from:', { type: typeof output, content: output });
 
   // Handle null/undefined
@@ -165,9 +165,9 @@ export async function extractImageUrl(output: any): Promise<string | null> {
       // Try other common properties
       const fileProps = ['href', 'download_url', 'file_url', 'path'];
       for (const prop of fileProps) {
-        if (prop in output && typeof output[prop] === 'string' && output[prop].startsWith('http')) {
-          console.log(`✅ Found URL in FileOutput.${prop}:`, output[prop]);
-          return output[prop];
+        if (prop in output && typeof (output as Record<string, unknown>)[prop] === 'string' && ((output as Record<string, unknown>)[prop] as string).startsWith('http')) {
+          console.log(`✅ Found URL in FileOutput.${prop}:`, (output as Record<string, unknown>)[prop]);
+          return (output as Record<string, unknown>)[prop] as string;
         }
       }
       
@@ -183,7 +183,7 @@ export async function extractImageUrl(output: any): Promise<string | null> {
       // ReadableStreams from Replicate are typically URLs in string format
       // We need to read the stream to get the URL
       try {
-        const reader = output.getReader();
+        const reader = (output as ReadableStream<Uint8Array>).getReader();
         const result = await reader.read();
         
         if (!result.done && result.value) {
@@ -231,7 +231,7 @@ export async function extractImageUrl(output: any): Promise<string | null> {
     
     for (const key of urlKeys) {
       if (output.hasOwnProperty(key)) {  // Only check own properties, not inherited
-        const value = output[key];
+        const value = (output as Record<string, unknown>)[key];
         console.log(`🔑 Found own property "${key}":`, typeof value, value);
         
         if (typeof value === 'string' && value.startsWith('http')) {
