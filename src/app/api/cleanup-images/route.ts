@@ -11,7 +11,15 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
  */
 async function isImageAccessible(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { method: 'HEAD', timeout: 10000 });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(url, { 
+      method: 'HEAD', 
+      signal: controller.signal 
+    });
+    
+    clearTimeout(timeoutId);
     return response.ok;
   } catch (error) {
     console.log(`❌ Image not accessible: ${url.substring(0, 50)}... - ${error}`);
@@ -76,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Checking ${images.length} images for accessibility...`);
     
-    const unavailableImages = [];
+    const unavailableImages: typeof images = [];
     const checkPromises = images.map(async (image) => {
       const isAccessible = await isImageAccessible(image.original_image_url);
       if (!isAccessible) {
