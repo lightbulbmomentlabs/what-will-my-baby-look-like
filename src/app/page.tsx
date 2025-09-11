@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -17,19 +17,16 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-export default function Home() {
+// Component that handles search params (needs Suspense)
+function PurchaseSuccessHandler({ 
+  onPurchaseInfo, 
+  onShowNotification 
+}: { 
+  onPurchaseInfo: (info: { creditsAdded: number; totalCredits: number; } | null) => void;
+  onShowNotification: (show: boolean) => void;
+}) {
   const searchParams = useSearchParams();
   const { credits, refetchCredits } = useUserCredits();
-  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
-  const [purchaseInfo, setPurchaseInfo] = useState<{
-    creditsAdded: number;
-    totalCredits: number;
-  } | null>(null);
-
-  // Track page view for analytics
-  useEffect(() => {
-    trackPageView('home');
-  }, []);
 
   // Handle purchase success
   useEffect(() => {
@@ -54,11 +51,11 @@ export default function Home() {
             if (packageId) {
               const creditPackage = getCreditPackage(packageId);
               if (creditPackage) {
-                setPurchaseInfo({
+                onPurchaseInfo({
                   creditsAdded: creditPackage.credits,
                   totalCredits: credits,
                 });
-                setShowSuccessNotification(true);
+                onShowNotification(true);
                 
                 // Refresh credits to ensure we have the latest count
                 await refetchCredits();
@@ -68,11 +65,11 @@ export default function Home() {
         } catch (error) {
           console.error('Error handling purchase success:', error);
           // Fallback: show generic success notification
-          setPurchaseInfo({
+          onPurchaseInfo({
             creditsAdded: 0,
             totalCredits: credits,
           });
-          setShowSuccessNotification(true);
+          onShowNotification(true);
         }
 
         // Clean up URL parameters
@@ -84,7 +81,22 @@ export default function Home() {
 
       handlePurchaseSuccess();
     }
-  }, [searchParams, credits, refetchCredits]);
+  }, [searchParams, credits, refetchCredits, onPurchaseInfo, onShowNotification]);
+
+  return null;
+}
+
+export default function Home() {
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [purchaseInfo, setPurchaseInfo] = useState<{
+    creditsAdded: number;
+    totalCredits: number;
+  } | null>(null);
+
+  // Track page view for analytics
+  useEffect(() => {
+    trackPageView('home');
+  }, []);
 
   const handleStartGenerating = () => {
     setShowSuccessNotification(false);
@@ -270,6 +282,14 @@ export default function Home() {
           </div>
         </section>
       </main>
+
+      {/* Purchase Success Handler with Suspense */}
+      <Suspense fallback={null}>
+        <PurchaseSuccessHandler 
+          onPurchaseInfo={setPurchaseInfo}
+          onShowNotification={setShowSuccessNotification}
+        />
+      </Suspense>
 
       {/* Purchase Success Notification */}
       {showSuccessNotification && purchaseInfo && (

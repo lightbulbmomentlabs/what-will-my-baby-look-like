@@ -253,8 +253,8 @@ export async function getImagesNeedingNotification(): Promise<{
       if (!userGroups.has(userId)) {
         userGroups.set(userId, {
           user_id: userId,
-          clerk_user_id: image.users.clerk_user_id,
-          email: image.users.email,
+          clerk_user_id: (image.users as any).clerk_user_id,
+          email: (image.users as any).email,
           images: [],
         });
       }

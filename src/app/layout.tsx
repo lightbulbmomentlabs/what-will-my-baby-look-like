@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: `%s | ${APP_CONFIG.name}`,
   },
   description: APP_CONFIG.description,
-  keywords: APP_CONFIG.keywords,
+  keywords: [...APP_CONFIG.keywords],
   authors: [{ name: 'Baby Predictor Team' }],
   creator: 'Baby Predictor Team',
   publisher: 'Baby Predictor Team',

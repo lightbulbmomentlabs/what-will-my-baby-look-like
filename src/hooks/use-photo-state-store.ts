@@ -44,6 +44,7 @@ const base64ToFile = (base64: string, filename: string): File => {
 // Helper to serialize UploadedImage with File objects
 const serializeUploadedImage = async (image: UploadedImage): Promise<Record<string, unknown>> => {
   const serialized: Record<string, unknown> = {
+    id: image.id,
     label: image.label,
     name: image.name,
     preview: image.preview,
@@ -65,24 +66,25 @@ const serializeUploadedImage = async (image: UploadedImage): Promise<Record<stri
 
 // Helper to deserialize UploadedImage with File objects
 const deserializeUploadedImage = (data: Record<string, unknown>): UploadedImage => {
-  const image: UploadedImage = {
-    label: data.label,
-    name: data.name,
+  const image: Partial<UploadedImage> = {
+    id: data.id as string || crypto.randomUUID(),
+    label: data.label as 'you' | 'partner',
+    name: data.name as string | undefined,
   };
 
   if (data.fileBase64 && data.fileName) {
-    image.file = base64ToFile(data.fileBase64, data.fileName);
+    image.file = base64ToFile(data.fileBase64 as string, data.fileName as string);
     // Recreate preview URL from the restored file
     image.preview = URL.createObjectURL(image.file);
   }
 
   if (data.croppedFileBase64 && data.croppedFileName) {
-    image.croppedFile = base64ToFile(data.croppedFileBase64, data.croppedFileName);
+    image.croppedFile = base64ToFile(data.croppedFileBase64 as string, data.croppedFileName as string);
     // Recreate cropped preview URL from the restored file
     image.croppedPreview = URL.createObjectURL(image.croppedFile);
   }
 
-  return image;
+  return image as UploadedImage;
 };
 
 // Check if data is expired

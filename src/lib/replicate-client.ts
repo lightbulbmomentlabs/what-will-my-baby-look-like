@@ -492,7 +492,7 @@ async function tryGenerateWithModel(modelConfig: typeof GENERATION_MODELS[0], pr
   console.log(`📝 Using prompt: ${input.prompt}`);
   console.log(`🚫 Using negative prompt: ${input.negative_prompt}`);
   
-  return await replicate.run(modelConfig.id, { input });
+  return await replicate.run(modelConfig.id as `${string}/${string}:${string}`, { input });
 }
 
 /**

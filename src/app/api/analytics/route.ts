@@ -53,18 +53,5 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Optional: Protect this endpoint in production
-// You might want to add authentication or rate limiting here
-export async function middleware(request: NextRequest) {
-  // Example: Only allow access in development
-  if (process.env.NODE_ENV === 'production') {
-    // You could add API key authentication here
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey || apiKey !== process.env.ANALYTICS_API_KEY) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-  }
-}
+// Note: For production, consider adding authentication checks within the GET function
+// or using middleware.ts at the root level for route protection
