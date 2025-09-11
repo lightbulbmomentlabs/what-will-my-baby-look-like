@@ -9,11 +9,13 @@ import { Webhook } from 'svix';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { getOrCreateUser } from '@/lib/credits';
 
-// Clerk webhook secret from environment variables
-const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-
-if (!WEBHOOK_SECRET) {
-  throw new Error('Please add CLERK_WEBHOOK_SECRET to your environment variables');
+// Lazy initialization to avoid build-time errors when env vars aren't available
+function getWebhookSecret() {
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+  if (!WEBHOOK_SECRET) {
+    throw new Error('Please add CLERK_WEBHOOK_SECRET to your environment variables');
+  }
+  return WEBHOOK_SECRET;
 }
 
 export async function POST(req: NextRequest) {
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
   const body = JSON.stringify(payload);
 
   // Create a new Svix instance with your secret
-  const wh = new Webhook(WEBHOOK_SECRET!);
+  const wh = new Webhook(getWebhookSecret());
 
   let evt: WebhookEvent;
 
