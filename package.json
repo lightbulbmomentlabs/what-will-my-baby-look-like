@@ -16,7 +16,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "postinstall": "echo 'Dependencies installed successfully'",
-    "prebuild": "echo 'Starting build process'"
+    "prebuild": "node scripts/verify-build.js",
+    "verify": "node scripts/verify-build.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.9",
