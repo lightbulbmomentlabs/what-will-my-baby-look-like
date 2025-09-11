@@ -29,7 +29,7 @@ export async function getExpirationStatus(userId: string): Promise<{
 }> {
   try {
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await ((supabaseAdmin() as any) as any)
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -40,10 +40,10 @@ export async function getExpirationStatus(userId: string): Promise<{
     }
 
     // Get all user images with expiration info
-    const { data: images, error: imagesError } = await supabaseAdmin
+    const { data: images, error: imagesError } = await ((supabaseAdmin() as any) as any)
       .from('generated_images')
       .select('id, baby_name, expires_at, expiration_notified, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '')
@@ -108,7 +108,7 @@ export async function cleanupExpiredImages(userId?: string): Promise<{
   error?: string;
 }> {
   try {
-    let query = supabaseAdmin
+    let query = (supabaseAdmin() as any)
       .from('generated_images')
       .delete()
       .lt('expires_at', new Date().toISOString())
@@ -116,7 +116,7 @@ export async function cleanupExpiredImages(userId?: string): Promise<{
 
     // If userId provided, only clean up that user's images
     if (userId) {
-      const { data: user, error: userError } = await supabaseAdmin
+      const { data: user, error: userError } = await ((supabaseAdmin() as any) as any)
         .from('users')
         .select('id')
         .eq('clerk_user_id', userId)
@@ -126,7 +126,7 @@ export async function cleanupExpiredImages(userId?: string): Promise<{
         return { success: false, cleaned_count: 0, error: 'User not found' };
       }
 
-      query = query.eq('user_id', user.id);
+      query = query.eq('user_id', (user as any).id);
     }
 
     const { data: deletedImages, error: deleteError } = await query
@@ -159,7 +159,7 @@ export async function extendImageExpiration(
 ): Promise<{ success: boolean; updated_count: number; error?: string }> {
   try {
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await ((supabaseAdmin() as any) as any)
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -170,13 +170,13 @@ export async function extendImageExpiration(
     }
 
     // Extend expiration for specified images
-    const { data: updatedImages, error: updateError } = await supabaseAdmin
+    const { data: updatedImages, error: updateError } = await ((supabaseAdmin() as any) as any)
       .from('generated_images')
       .update({
         expires_at: `NOW() + INTERVAL '${additionalDays} days'`,
         expiration_notified: false, // Reset notification flag
       })
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .in('id', imageIds)
       .select('id, baby_name, expires_at');
 
@@ -214,7 +214,7 @@ export async function getImagesNeedingNotification(): Promise<{
 }> {
   try {
     // Get images expiring in the next 7 days that haven't been notified
-    const { data: expiringImages, error: imagesError } = await supabaseAdmin
+    const { data: expiringImages, error: imagesError } = await ((supabaseAdmin() as any) as any)
       .from('generated_images')
       .select(`
         id, 
@@ -289,7 +289,7 @@ export async function markImagesAsNotified(imageIds: string[]): Promise<{
   error?: string;
 }> {
   try {
-    const { data: updatedImages, error: updateError } = await supabaseAdmin
+    const { data: updatedImages, error: updateError } = await ((supabaseAdmin() as any) as any)
       .from('generated_images')
       .update({ expiration_notified: true })
       .in('id', imageIds)

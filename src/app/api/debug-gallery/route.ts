@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -22,29 +22,29 @@ export async function GET(request: NextRequest) {
     }
 
     // Get ALL generated images for this user (including failed ones)
-    const { data: allImages, error: allImagesError } = await supabaseAdmin
+    const { data: allImages, error: allImagesError } = await supabaseAdmin()
       .from('generated_images')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .order('created_at', { ascending: false });
 
     // Get only successful images with non-empty URLs
-    const { data: successImages, error: successError } = await supabaseAdmin
+    const { data: successImages, error: successError } = await supabaseAdmin()
       .from('generated_images')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '')
       .order('created_at', { ascending: false });
 
     // Categorize images by URL type
-    const replicateImages = successImages?.filter(img => img.original_image_url?.includes('replicate.delivery')) || [];
-    const supabaseImages = successImages?.filter(img => img.original_image_url?.includes('supabase')) || [];
+    const replicateImages = successImages?.filter((img: any) => img.original_image_url?.includes('replicate.delivery')) || [];
+    const supabaseImages = successImages?.filter((img: any) => img.original_image_url?.includes('supabase')) || [];
 
     return NextResponse.json({
       userId,
-      internalUserId: user.id,
+      internalUserId: (user as any).id,
       totalImages: allImages?.length || 0,
       successImages: successImages?.length || 0,
       urlAnalysis: {
@@ -52,14 +52,14 @@ export async function GET(request: NextRequest) {
         supabaseUrls: supabaseImages.length,
         other: (successImages?.length || 0) - replicateImages.length - supabaseImages.length,
       },
-      replicateImages: replicateImages.map(img => ({
+      replicateImages: replicateImages.map((img: any) => ({
         id: img.id,
         baby_name: img.baby_name,
         created_at: img.created_at,
         urlPreview: img.original_image_url.substring(0, 50) + '...',
         status: 'likely_expired'
       })),
-      allImages: allImages?.map(img => ({
+      allImages: allImages?.map((img: any) => ({
         id: img.id,
         baby_name: img.baby_name,
         success: img.generation_success,
@@ -85,7 +85,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -98,10 +98,10 @@ export async function DELETE(request: NextRequest) {
     console.log('🧹 Cleaning up expired Replicate URLs for user:', userId);
 
     // Delete images with expired Replicate URLs
-    const { data: deletedImages, error: deleteError } = await supabaseAdmin
+    const { data: deletedImages, error: deleteError } = await supabaseAdmin()
       .from('generated_images')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .like('original_image_url', '%replicate.delivery%')
       .select('id, baby_name, original_image_url, created_at');
 
@@ -116,7 +116,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: `Successfully removed ${deletedImages?.length || 0} expired images`,
       removedCount: deletedImages?.length || 0,
-      removedImages: deletedImages?.map(img => ({
+      removedImages: deletedImages?.map((img: any) => ({
         id: img.id,
         name: img.baby_name,
         created_at: img.created_at,

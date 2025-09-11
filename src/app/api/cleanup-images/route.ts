@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
     console.log('🧹 Starting cleanup for user:', userId);
 
     // Get all user's generated images
-    const { data: images, error: imagesError } = await supabaseAdmin
+    const { data: images, error: imagesError } = await supabaseAdmin()
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '');
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Checking ${images.length} images for accessibility...`);
     
-    const unavailableImages: typeof images = [];
-    const checkPromises = images.map(async (image) => {
+    const unavailableImages: any[] = [];
+    const checkPromises = images.map(async (image: any) => {
       const isAccessible = await isImageAccessible(image.original_image_url);
       if (!isAccessible) {
         unavailableImages.push(image);
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     // Remove unavailable images from database
     const imageIdsToRemove = unavailableImages.map(img => img.id);
-    const { error: deleteError } = await supabaseAdmin
+    const { error: deleteError } = await supabaseAdmin()
       .from('generated_images')
       .delete()
       .in('id', imageIdsToRemove);
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -173,10 +173,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all user's images
-    const { data: images, error: imagesError } = await supabaseAdmin
+    const { data: images, error: imagesError } = await (supabaseAdmin() as any)
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '');
@@ -189,9 +189,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Separate by URL type for analysis
-    const replicateImages = images.filter(img => img.original_image_url.includes('replicate.delivery'));
-    const supabaseImages = images.filter(img => img.original_image_url.includes('supabase'));
-    const otherImages = images.filter(img => 
+    const replicateImages = images.filter((img: any) => img.original_image_url.includes('replicate.delivery'));
+    const supabaseImages = images.filter((img: any) => img.original_image_url.includes('supabase'));
+    const otherImages = images.filter((img: any) => 
       !img.original_image_url.includes('replicate.delivery') && 
       !img.original_image_url.includes('supabase')
     );
@@ -205,13 +205,13 @@ export async function GET(request: NextRequest) {
         other_urls: otherImages.length,
       },
       preview: {
-        replicate_images: replicateImages.slice(0, 3).map(img => ({
+        replicate_images: replicateImages.slice(0, 3).map((img: any) => ({
           id: img.id,
           name: img.baby_name,
           created_at: img.created_at,
           url_type: 'replicate (likely expired)',
         })),
-        supabase_images: supabaseImages.slice(0, 3).map(img => ({
+        supabase_images: supabaseImages.slice(0, 3).map((img: any) => ({
           id: img.id,
           name: img.baby_name,
           created_at: img.created_at,

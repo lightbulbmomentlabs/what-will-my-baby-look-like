@@ -41,7 +41,7 @@ export async function getOrCreateUser(clerkUserId: string, userInfo?: {
 }): Promise<{ success: boolean; user?: User; error?: string }> {
   try {
     // First try to get existing user
-    const { data: existingUser, error: fetchError } = await supabaseAdmin
+    const { data: existingUser, error: fetchError } = await (supabaseAdmin() as any)
       .from('users')
       .select('*')
       .eq('clerk_user_id', clerkUserId)
@@ -57,7 +57,7 @@ export async function getOrCreateUser(clerkUserId: string, userInfo?: {
     }
 
     // Create new user with 1 free credit
-    const { data: newUser, error: createError } = await supabaseAdmin
+    const { data: newUser, error: createError } = await (supabaseAdmin() as any)
       .from('users')
       .insert([
         {
@@ -91,7 +91,7 @@ export async function getOrCreateUser(clerkUserId: string, userInfo?: {
  */
 export async function getUserByClerkId(clerkUserId: string): Promise<{ success: boolean; user?: User; error?: string }> {
   try {
-    const { data: user, error } = await supabaseAdmin
+    const { data: user, error } = await (supabaseAdmin() as any)
       .from('users')
       .select('*')
       .eq('clerk_user_id', clerkUserId)
@@ -181,7 +181,7 @@ export async function deductCredits(clerkUserId: string, creditsToDeduct: number
 
     const newCreditsCount = user.credits - creditsToDeduct;
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await (supabaseAdmin() as any)
       .from('users')
       .update({ credits: newCreditsCount })
       .eq('clerk_user_id', clerkUserId);
@@ -215,7 +215,7 @@ export async function addCredits(clerkUserId: string, creditsToAdd: number): Pro
     const user = userResult.user;
     const newCreditsCount = user.credits + creditsToAdd;
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await (supabaseAdmin() as any)
       .from('users')
       .update({ credits: newCreditsCount })
       .eq('clerk_user_id', clerkUserId);
@@ -253,7 +253,7 @@ export async function createTransaction(data: {
       return { success: false, error: userResult.error || 'User not found' };
     }
 
-    const { data: transaction, error } = await supabaseAdmin
+    const { data: transaction, error } = await (supabaseAdmin() as any)
       .from('transactions')
       .insert([
         {
@@ -290,7 +290,7 @@ export async function createTransaction(data: {
 export async function completeTransaction(stripePaymentIntentId: string): Promise<{ success: boolean; error?: string }> {
   try {
     // Get the transaction
-    const { data: transaction, error: fetchError } = await supabaseAdmin
+    const { data: transaction, error: fetchError } = await (supabaseAdmin() as any)
       .from('transactions')
       .select(`
         *,
@@ -309,7 +309,7 @@ export async function completeTransaction(stripePaymentIntentId: string): Promis
     }
 
     // Update transaction status
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await (supabaseAdmin() as any)
       .from('transactions')
       .update({ status: 'completed' })
       .eq('stripe_payment_intent_id', stripePaymentIntentId);
@@ -327,7 +327,7 @@ export async function completeTransaction(stripePaymentIntentId: string): Promis
 
     if (!addResult.success) {
       // Rollback transaction status
-      await supabaseAdmin
+      await (supabaseAdmin() as any)
         .from('transactions')
         .update({ status: 'failed' })
         .eq('stripe_payment_intent_id', stripePaymentIntentId);
@@ -356,7 +356,7 @@ export async function getUserTransactions(clerkUserId: string): Promise<{ succes
       return { success: false, error: userResult.error || 'User not found' };
     }
 
-    const { data: transactions, error } = await supabaseAdmin
+    const { data: transactions, error } = await (supabaseAdmin() as any)
       .from('transactions')
       .select('*')
       .eq('user_id', userResult.user.id)

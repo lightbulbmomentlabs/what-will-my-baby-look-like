@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user from database to get the internal user ID
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    console.log('🔄 Starting image migration for user:', userId, 'internal ID:', user.id);
+    console.log('🔄 Starting image migration for user:', userId, 'internal ID:', (user as any).id);
 
     // Migrate existing images
-    const migrationResult = await migrateExistingImages(user.id);
+    const migrationResult = await migrateExistingImages((user as any).id);
 
     if (!migrationResult.success) {
       return NextResponse.json({
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await supabaseAdmin()
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -90,19 +90,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Count images that need migration (still have Replicate URLs)
-    const { data: replicateImages, error: replicateError } = await supabaseAdmin
+    const { data: replicateImages, error: replicateError } = await supabaseAdmin()
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .like('original_image_url', '%replicate.delivery%');
 
     // Count images that are already migrated (have Supabase URLs)
-    const { data: supabaseImages, error: supabaseError } = await supabaseAdmin
+    const { data: supabaseImages, error: supabaseError } = await supabaseAdmin()
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
-      .eq('user_id', user.id)
+      .eq('user_id', (user as any).id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .like('original_image_url', '%supabase%');
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         alreadyMigrated: supabaseImages?.length || 0,
         total: (replicateImages?.length || 0) + (supabaseImages?.length || 0),
       },
-      replicateImages: replicateImages?.map(img => ({
+      replicateImages: replicateImages?.map((img: any) => ({
         id: img.id,
         name: img.baby_name,
         created_at: img.created_at,

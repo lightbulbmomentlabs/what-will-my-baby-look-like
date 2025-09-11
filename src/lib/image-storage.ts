@@ -36,7 +36,7 @@ export async function storeImagePermanently(
     console.log('📸 Uploading to Supabase Storage with filename:', filename);
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+    const { data: uploadData, error: uploadError } = await supabaseAdmin().storage
       .from('generated-images')
       .upload(filename, imageBlob, {
         contentType: 'image/jpeg',
@@ -51,7 +51,7 @@ export async function storeImagePermanently(
     console.log('✅ Successfully uploaded to storage:', uploadData.path);
 
     // Get the public URL
-    const { data: urlData } = supabaseAdmin.storage
+    const { data: urlData } = supabaseAdmin().storage
       .from('generated-images')
       .getPublicUrl(uploadData.path);
 
@@ -81,7 +81,7 @@ export async function migrateExistingImages(userId: string): Promise<{
 }> {
   try {
     // Get all user images that still have Replicate URLs
-    const { data: images, error: queryError } = await supabaseAdmin
+    const { data: images, error: queryError } = await supabaseAdmin()
       .from('generated_images')
       .select('id, original_image_url, baby_name, baby_age, baby_gender')
       .eq('user_id', userId)
@@ -101,36 +101,36 @@ export async function migrateExistingImages(userId: string): Promise<{
     let migrated = 0;
 
     // Process each image
-    for (const image of images) {
+    for (const image of (images as any[])) {
       try {
         const storageResult = await storeImagePermanently(
-          image.original_image_url,
+          (image as any).original_image_url,
           userId,
           {
-            babyName: image.baby_name,
-            age: image.baby_age,
-            gender: image.baby_gender,
+            babyName: (image as any).baby_name,
+            age: (image as any).baby_age,
+            gender: (image as any).baby_gender,
           }
         );
 
         if (storageResult.success && storageResult.permanentUrl) {
           // Update the database with the new permanent URL
-          const { error: updateError } = await supabaseAdmin
+          const { error: updateError } = await (supabaseAdmin() as any)
             .from('generated_images')
             .update({ original_image_url: storageResult.permanentUrl })
-            .eq('id', image.id);
+            .eq('id', (image as any).id);
 
           if (updateError) {
-            errors.push(`Failed to update database for image ${image.id}: ${updateError.message}`);
+            errors.push(`Failed to update database for image ${(image as any).id}: ${updateError.message}`);
           } else {
             migrated++;
-            console.log(`✅ Migrated image ${image.id} to permanent storage`);
+            console.log(`✅ Migrated image ${(image as any).id} to permanent storage`);
           }
         } else {
-          errors.push(`Failed to store image ${image.id}: ${storageResult.error}`);
+          errors.push(`Failed to store image ${(image as any).id}: ${storageResult.error}`);
         }
       } catch (error) {
-        errors.push(`Error processing image ${image.id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(`Error processing image ${(image as any).id}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
