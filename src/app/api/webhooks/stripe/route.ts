@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { headers } from 'next/headers';
 import { addCredits, createTransaction } from '@/lib/credits';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeClient } from '@/lib/stripe-client';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -26,7 +23,7 @@ export async function POST(req: NextRequest) {
     // Verify webhook signature using raw body
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = getStripeClient().webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return NextResponse.json({

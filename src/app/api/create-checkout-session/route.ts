@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import Stripe from 'stripe';
 import { getCreditPackage } from '@/lib/credit-constants';
 import { getUserByClerkId } from '@/lib/credits';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeClient } from '@/lib/stripe-client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripeClient().checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {

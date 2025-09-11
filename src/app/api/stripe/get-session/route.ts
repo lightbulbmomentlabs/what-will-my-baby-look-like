@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-08-27.basil',
-});
+import { getStripeClient } from '@/lib/stripe-client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Retrieve the checkout session from Stripe
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await getStripeClient().checkout.sessions.retrieve(sessionId);
 
     // Verify the session belongs to the current user
     if (session.metadata?.userId !== userId) {
