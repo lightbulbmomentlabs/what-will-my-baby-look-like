@@ -116,3 +116,4 @@ Ensure all environment variables are set in your deployment environment:
 This project is proprietary and confidential.
 
 © 2025 Lightbulb Moment Labs, Inc. All rights reserved.
+# Trigger rebuild
