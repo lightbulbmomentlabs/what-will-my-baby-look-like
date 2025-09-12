@@ -157,6 +157,10 @@ export async function uploadImageToStorage(
   bucket: string = 'generated-images'
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   try {
+    if (!supabase) {
+      return { success: false, error: 'Database not configured. Please check environment variables.' };
+    }
+
     // Upload file to storage
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -246,6 +250,10 @@ export async function getGenerationAnalytics(
   endDate?: string
 ) {
   try {
+    if (!supabase) {
+      return { success: false, error: 'Database not configured. Please check environment variables.' };
+    }
+
     let query = supabase
       .from('generated_images')
       .select('*')
@@ -277,6 +285,10 @@ export async function getGenerationAnalytics(
  */
 export async function getGenerationStats() {
   try {
+    if (!supabase) {
+      return { success: false, error: 'Database not configured. Please check environment variables.' };
+    }
+
     const { data, error } = await supabase.rpc('get_generation_stats');
 
     if (error) {

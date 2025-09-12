@@ -35,8 +35,14 @@ export async function storeImagePermanently(
 
     console.log('📸 Uploading to Supabase Storage with filename:', filename);
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return { success: false, error: 'Database not configured. Please check environment variables.' };
+    }
+
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabaseAdmin().storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('generated-images')
       .upload(filename, imageBlob, {
         contentType: 'image/jpeg',
@@ -51,7 +57,7 @@ export async function storeImagePermanently(
     console.log('✅ Successfully uploaded to storage:', uploadData.path);
 
     // Get the public URL
-    const { data: urlData } = supabaseAdmin().storage
+    const { data: urlData } = supabase.storage
       .from('generated-images')
       .getPublicUrl(uploadData.path);
 
@@ -80,8 +86,14 @@ export async function migrateExistingImages(userId: string): Promise<{
   errors: string[];
 }> {
   try {
+    // Check if Supabase is configured
+    const supabase2 = supabaseAdmin();
+    if (!supabase2) {
+      return { success: false, migrated: 0, errors: ['Database not configured. Please check environment variables.'] };
+    }
+
     // Get all user images that still have Replicate URLs
-    const { data: images, error: queryError } = await supabaseAdmin()
+    const { data: images, error: queryError } = await supabase2
       .from('generated_images')
       .select('id, original_image_url, baby_name, baby_age, baby_gender')
       .eq('user_id', userId)
@@ -115,7 +127,7 @@ export async function migrateExistingImages(userId: string): Promise<{
 
         if (storageResult.success && storageResult.permanentUrl) {
           // Update the database with the new permanent URL
-          const { error: updateError } = await (supabaseAdmin() as any)
+          const { error: updateError } = await (supabase2 as any)
             .from('generated_images')
             .update({ original_image_url: storageResult.permanentUrl })
             .eq('id', (image as any).id);

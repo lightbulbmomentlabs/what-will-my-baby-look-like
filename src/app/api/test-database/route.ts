@@ -9,9 +9,19 @@ export async function GET(req: NextRequest) {
   try {
     const results: Record<string, unknown> = {};
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+        timestamp: new Date().toISOString(),
+      }, { status: 503 });
+    }
+
     // Test 1: Check if we can connect to Supabase
     try {
-      const { data: connectionTest, error: connectionError } = await supabaseAdmin()
+      const { data: connectionTest, error: connectionError } = await supabase
         .from('users')
         .select('count')
         .limit(1);
@@ -29,7 +39,7 @@ export async function GET(req: NextRequest) {
 
     // Test 2: Check if users table exists and its structure
     try {
-      const { data: usersTest, error: usersError } = await supabaseAdmin()
+      const { data: usersTest, error: usersError } = await supabase
         .from('users')
         .select('*')
         .limit(1);
@@ -48,7 +58,7 @@ export async function GET(req: NextRequest) {
 
     // Test 3: Check if transactions table exists
     try {
-      const { data: transactionsTest, error: transactionsError } = await supabaseAdmin()
+      const { data: transactionsTest, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
         .limit(1);

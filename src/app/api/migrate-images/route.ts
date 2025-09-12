@@ -20,8 +20,17 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database to get the internal user ID
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -75,8 +84,17 @@ export async function GET(request: NextRequest) {
       }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase2 = supabaseAdmin();
+    if (!supabase2) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase2
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -90,7 +108,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Count images that need migration (still have Replicate URLs)
-    const { data: replicateImages, error: replicateError } = await supabaseAdmin()
+    const { data: replicateImages, error: replicateError } = await supabase2
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
       .eq('user_id', (user as any).id)
@@ -99,7 +117,7 @@ export async function GET(request: NextRequest) {
       .like('original_image_url', '%replicate.delivery%');
 
     // Count images that are already migrated (have Supabase URLs)
-    const { data: supabaseImages, error: supabaseError } = await supabaseAdmin()
+    const { data: supabaseImages, error: supabaseError } = await supabase2
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
       .eq('user_id', (user as any).id)

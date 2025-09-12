@@ -10,8 +10,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Auth required' }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -22,14 +30,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get ALL generated images for this user (including failed ones)
-    const { data: allImages, error: allImagesError } = await supabaseAdmin()
+    const { data: allImages, error: allImagesError } = await supabase
       .from('generated_images')
       .select('*')
       .eq('user_id', (user as any).id)
       .order('created_at', { ascending: false });
 
     // Get only successful images with non-empty URLs
-    const { data: successImages, error: successError } = await supabaseAdmin()
+    const { data: successImages, error: successError } = await supabase
       .from('generated_images')
       .select('*')
       .eq('user_id', (user as any).id)
@@ -84,8 +92,16 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Auth required' }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -98,7 +114,7 @@ export async function DELETE(request: NextRequest) {
     console.log('🧹 Cleaning up expired Replicate URLs for user:', userId);
 
     // Delete images with expired Replicate URLs
-    const { data: deletedImages, error: deleteError } = await supabaseAdmin()
+    const { data: deletedImages, error: deleteError } = await supabase
       .from('generated_images')
       .delete()
       .eq('user_id', (user as any).id)
