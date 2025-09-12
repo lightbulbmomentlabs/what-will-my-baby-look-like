@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/sheet';
 import { useUserCredits } from '@/hooks/use-user-credits';
 import { BuyCreditsModal } from '@/components/credits/buy-credits-modal';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 function getDisplayName(user: unknown): string {
   const userObj = user as { 
@@ -67,7 +68,7 @@ export function Header() {
   const displayName = user ? getDisplayName(user) : 'User';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo/Brand */}
@@ -77,10 +78,10 @@ export function Header() {
                 <Baby className="w-6 h-6 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <h1 className="text-lg font-bold text-foreground">
                   What Will My Baby Look Like
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">
+                <p className="text-xs text-muted-foreground -mt-1">
                   AI-powered predictions
                 </p>
               </div>
@@ -90,7 +91,7 @@ export function Header() {
           {/* Authentication */}
           <div className="flex items-center gap-4">
             {!isLoaded ? (
-              <div className="h-10 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-10 w-20 bg-muted rounded animate-pulse" />
             ) : !isSignedIn ? (
               <SignInButton mode="modal">
                 <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
@@ -101,16 +102,19 @@ export function Header() {
               <>
                 {/* Desktop Menu */}
                 <div className="hidden sm:flex items-center gap-4">
+                  {/* Theme Toggle */}
+                  <ThemeToggle />
+                  
                   {/* Credits Display Button */}
                   <button 
                     onClick={() => setShowCreditsModal(true)}
                     className={`flex items-center gap-2 px-3 py-1 rounded-full transition-all duration-500 hover:shadow-md hover:scale-105 cursor-pointer ${
                       creditsUpdated 
                         ? 'bg-green-100 dark:bg-green-900/30 scale-110 shadow-lg' 
-                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        : 'bg-muted hover:bg-muted/80'
                     }`}
                   >
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-muted-foreground">
                       Credits:
                     </span>
                     <span className={`text-sm font-bold transition-colors duration-500 ${
@@ -158,16 +162,19 @@ export function Header() {
 
                 {/* Mobile Menu */}
                 <div className="sm:hidden flex items-center gap-3">
+                  {/* Theme Toggle */}
+                  <ThemeToggle />
+                  
                   {/* Mobile Credits Display */}
                   <button 
                     onClick={() => setShowCreditsModal(true)}
                     className={`flex items-center gap-2 px-3 py-1 rounded-full transition-all duration-500 hover:shadow-md hover:scale-105 cursor-pointer ${
                       creditsUpdated 
                         ? 'bg-green-100 dark:bg-green-900/30 scale-110 shadow-lg' 
-                        : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                        : 'bg-muted hover:bg-muted/80'
                     }`}
                   >
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Credits:
                     </span>
                     <span className={`text-xs font-bold transition-colors duration-500 ${
@@ -203,7 +210,7 @@ export function Header() {
                           className={`flex items-center justify-between p-3 rounded-lg transition-all duration-500 hover:shadow-md hover:scale-105 cursor-pointer w-full ${
                             creditsUpdated 
                               ? 'bg-green-100 dark:bg-green-900/30 scale-105 shadow-lg' 
-                              : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'
+                              : 'bg-muted hover:bg-muted/80'
                           }`}
                         >
                           <span className="font-medium">Credits</span>
@@ -225,7 +232,7 @@ export function Header() {
                         <div className="space-y-2">
                           <Link
                             href="/gallery"
-                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                             onClick={() => setMobileMenuOpen(false)}
                           >
                             <Images className="w-5 h-5" />
@@ -233,7 +240,7 @@ export function Header() {
                           </Link>
                           
                           <SignOutButton>
-                            <button className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors w-full text-left">
+                            <button className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors w-full text-left">
                               <LogOut className="w-5 h-5" />
                               <span className="font-medium">Sign Out</span>
                             </button>

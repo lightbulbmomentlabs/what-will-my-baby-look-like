@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
   },
   // Fix workspace root warning in production
   outputFileTracingRoot: __dirname,
+  
+  webpack: (config, { isServer }) => {
+    // Handle missing Node.js modules in browser builds
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        stream: false,
+        crypto: false,
+        encoding: false,
+      };
+    }
+    
+    return config;
+  },
 };
 
 export default nextConfig;

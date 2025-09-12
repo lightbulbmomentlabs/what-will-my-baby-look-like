@@ -73,9 +73,10 @@ export default function RootLayout({
         <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
           <ThemeProvider
             attribute="class"
-            defaultTheme="light"
+            defaultTheme="system"
             enableSystem={true}
             disableTransitionOnChange={false}
+            storageKey="baby-predictor-theme"
           >
             {children}
           </ThemeProvider>
