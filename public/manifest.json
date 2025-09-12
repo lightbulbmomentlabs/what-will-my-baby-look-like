@@ -1,0 +1,16 @@
+{
+  "name": "What Will My Baby Look Like",
+  "short_name": "BabyLookAlike",
+  "description": "AI-powered predictions for what your baby will look like",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ]
+}

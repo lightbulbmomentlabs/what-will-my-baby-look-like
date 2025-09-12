@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 // Lazy initialization to avoid build-time errors when env vars aren't available
 let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
 
-export const supabaseAdmin = (() => {
+export const supabaseAdmin = () => {
   if (_supabaseAdmin) {
     return _supabaseAdmin;
   }
@@ -17,9 +17,10 @@ export const supabaseAdmin = (() => {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error(
-      'Missing Supabase service role environment variables. Please check your .env.local file.',
+    console.error(
+      'Missing Supabase service role environment variables. Database operations will not work.',
     );
+    return null;
   }
 
   _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -30,4 +31,4 @@ export const supabaseAdmin = (() => {
   });
 
   return _supabaseAdmin;
-});
+};

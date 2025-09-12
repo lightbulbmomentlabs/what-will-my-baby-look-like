@@ -1,19 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.',
-  );
-}
+// Check if Supabase is configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false, // Since we're not using user authentication
-  },
-});
+// Create client only if configured, otherwise create a mock client
+export const supabase = isSupabaseConfigured 
+  ? createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: {
+        persistSession: false, // Since we're not using user authentication
+      },
+    })
+  : null;
 
 /**
  * Analytics functions for tracking usage
@@ -22,6 +22,12 @@ export async function trackEvent(
   event: string,
   metadata?: Record<string, unknown>,
 ) {
+  // Skip tracking if Supabase is not configured
+  if (!isSupabaseConfigured || !supabase) {
+    console.warn('Analytics tracking skipped: Supabase not configured');
+    return;
+  }
+
   try {
     const sessionId =
       typeof window !== 'undefined'
@@ -98,6 +104,12 @@ export interface GeneratedImageData {
  * Save generated image metadata to database
  */
 export async function saveGeneratedImage(data: GeneratedImageData) {
+  // Skip saving if Supabase is not configured
+  if (!isSupabaseConfigured || !supabase) {
+    console.warn('Image metadata save skipped: Supabase not configured');
+    return { success: false, error: 'Supabase not configured' };
+  }
+
   try {
     // Set expiration date to 30 days from now
     const expiresAt = new Date();

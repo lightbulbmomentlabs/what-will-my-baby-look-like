@@ -40,8 +40,15 @@ export async function getOrCreateUser(clerkUserId: string, userInfo?: {
   lastName?: string;
 }): Promise<{ success: boolean; user?: User; error?: string }> {
   try {
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      console.warn('Credits service unavailable: Supabase not configured');
+      return { success: false, error: 'Database not configured' };
+    }
+
     // First try to get existing user
-    const { data: existingUser, error: fetchError } = await (supabaseAdmin() as any)
+    const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
       .eq('clerk_user_id', clerkUserId)

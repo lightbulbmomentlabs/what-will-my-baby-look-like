@@ -8,6 +8,17 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+        images: [],
+        count: 0,
+      }, { status: 503 });
+    }
+
     // Get authenticated user
     const { userId } = await auth();
     
@@ -20,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user from database to get the internal user ID
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -34,7 +45,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch user's generated images - only include images with permanent storage URLs
-    const { data: images, error: imagesError } = await supabaseAdmin()
+    const { data: images, error: imagesError } = await supabase
       .from('generated_images')
       .select(`
         id,
@@ -66,7 +77,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get statistics for debugging
-    const { data: allUserImages } = await supabaseAdmin()
+    const { data: allUserImages } = await supabase
       .from('generated_images')
       .select('generation_success, original_image_url')
       .eq('user_id', (user as any).id);
