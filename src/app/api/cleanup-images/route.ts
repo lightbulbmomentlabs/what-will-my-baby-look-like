@@ -40,8 +40,17 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase = supabaseAdmin();
+    if (!supabase) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -57,7 +66,7 @@ export async function POST(request: NextRequest) {
     console.log('🧹 Starting cleanup for user:', userId);
 
     // Get all user's generated images
-    const { data: images, error: imagesError } = await supabaseAdmin()
+    const { data: images, error: imagesError } = await supabase
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
       .eq('user_id', (user as any).id)
@@ -109,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Remove unavailable images from database
     const imageIdsToRemove = unavailableImages.map(img => img.id);
-    const { error: deleteError } = await supabaseAdmin()
+    const { error: deleteError } = await supabase
       .from('generated_images')
       .delete()
       .in('id', imageIdsToRemove);
@@ -158,8 +167,17 @@ export async function GET(request: NextRequest) {
       }, { status: 401 });
     }
 
+    // Check if Supabase is configured
+    const supabase2 = supabaseAdmin();
+    if (!supabase2) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database not configured. Please check environment variables.',
+      }, { status: 503 });
+    }
+
     // Get user from database
-    const { data: user, error: userError } = await supabaseAdmin()
+    const { data: user, error: userError } = await supabase2
       .from('users')
       .select('id')
       .eq('clerk_user_id', userId)
@@ -173,7 +191,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all user's images
-    const { data: images, error: imagesError } = await (supabaseAdmin() as any)
+    const { data: images, error: imagesError } = await supabase2
       .from('generated_images')
       .select('id, original_image_url, baby_name, created_at')
       .eq('user_id', (user as any).id)
