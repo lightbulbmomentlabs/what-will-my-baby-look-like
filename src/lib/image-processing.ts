@@ -1,5 +1,6 @@
 import imageCompression from 'browser-image-compression';
-import * as faceapi from 'face-api.js';
+// Temporarily commented out to isolate Clerk issue
+// import * as faceapi from 'face-api.js';
 
 // Dynamic HEIC import for all devices
 type HEIC2AnyFunction = (options: {
@@ -37,11 +38,12 @@ export async function loadFaceDetectionModels() {
   const MODEL_URL = '/models'; // We'll need to add model files to public/models
   
   try {
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-    ]);
+    // Temporarily commented out for Clerk debugging
+    // await Promise.all([
+    //   faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+    //   faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+    //   faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    // ]);
   } catch (error) {
     console.error('Failed to load face detection models:', error);
     // Fallback: continue without face detection
@@ -124,12 +126,14 @@ export async function detectFaces(imageElement: HTMLImageElement): Promise<boole
   if (typeof window === 'undefined') return true; // Skip on server
 
   try {
-    const detections = await faceapi
-      .detectAllFaces(imageElement, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceDescriptors();
+    // Temporarily commented out for Clerk debugging
+    // const detections = await faceapi
+    //   .detectAllFaces(imageElement, new faceapi.TinyFaceDetectorOptions())
+    //   .withFaceLandmarks()
+    //   .withFaceDescriptors();
 
-    return detections.length > 0;
+    // return detections.length > 0;
+    return true; // Skip face detection for now
   } catch (error) {
     console.error('Face detection failed:', error);
     return true; // Continue without face detection if it fails
