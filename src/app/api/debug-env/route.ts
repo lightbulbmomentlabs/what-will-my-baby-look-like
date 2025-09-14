@@ -6,6 +6,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
+interface HealthStatus {
+  overall: 'healthy' | 'unhealthy';
+  issues: string[];
+  user: {
+    authenticated: boolean;
+    userId: string;
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Get current authentication status
@@ -71,7 +80,7 @@ export async function GET(request: NextRequest) {
     const clerkConfigured = envStatus.clerk.publishableKey.exists && 
                            envStatus.clerk.secretKey.exists;
 
-    const healthStatus = {
+    const healthStatus: HealthStatus = {
       overall: supabaseConfigured && clerkConfigured ? 'healthy' : 'unhealthy',
       issues: [],
       user: {
