@@ -45,7 +45,11 @@ export default clerkMiddleware(async (auth, req) => {
       // Only redirect if user is truly not authenticated
       // Use the current domain for sign-in URL to avoid subdomain issues
       const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
+
+      // Use just the pathname for redirect to avoid domain issues
+      const redirectPath = req.nextUrl.pathname + req.nextUrl.search;
+      signInUrl.searchParams.set('redirect_url', redirectPath);
+
       return NextResponse.redirect(signInUrl);
     }
   }

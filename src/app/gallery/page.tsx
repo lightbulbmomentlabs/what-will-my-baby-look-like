@@ -18,7 +18,7 @@ export default function GalleryPage() {
   // Handle client-side authentication redirect
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
-      router.push('/sign-in?redirect_url=' + encodeURIComponent(window.location.pathname));
+      router.push('/sign-in?redirect_url=' + encodeURIComponent('/gallery'));
     }
   }, [isSignedIn, isLoaded, router]);
 
