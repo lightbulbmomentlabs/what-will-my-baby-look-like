@@ -19,16 +19,19 @@ export async function GET(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // Get authenticated user
+    // Get authenticated user - handle auth more gracefully
     const { userId } = await auth();
-    
+
     if (!userId) {
+      console.log('Gallery API: No userId found in auth()');
       return NextResponse.json({
         success: false,
-        error: 'Authentication required',
+        error: 'Authentication required. Please sign in to view your gallery.',
         requiresAuth: true,
       }, { status: 401 });
     }
+
+    console.log('Gallery API: User authenticated with ID:', userId);
 
     // Get user from database to get the internal user ID
     const { data: user, error: userError } = await supabase
@@ -38,11 +41,15 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (userError || !user) {
+      console.log('Gallery API: User lookup failed for clerk_user_id:', userId);
+      console.log('Gallery API: User error:', userError);
       return NextResponse.json({
         success: false,
-        error: 'User not found',
+        error: 'User profile not found. Please contact support if this persists.',
       }, { status: 404 });
     }
+
+    console.log('Gallery API: Found user with internal ID:', (user as any).id);
 
     // Fetch user's generated images - only include images with permanent storage URLs
     const { data: images, error: imagesError } = await supabase
