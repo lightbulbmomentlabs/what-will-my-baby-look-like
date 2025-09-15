@@ -19,42 +19,14 @@ export async function GET(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // Try multiple auth methods to handle server-side auth issues
-    let userId: string | null = null;
+    // TEMPORARY: Get userId from request headers sent by client-side auth
+    // This bypasses server-side auth issues while we investigate
+    const clientUserId = request.headers.get('x-clerk-user-id');
 
-    try {
-      // Method 1: Try auth() function
-      const authResult = await auth();
-      userId = authResult.userId;
-      console.log('Gallery API: auth() result:', userId ? 'found userId' : 'no userId');
-    } catch (error) {
-      console.log('Gallery API: auth() failed:', error);
-    }
+    console.log('Gallery API: Client-provided userId:', clientUserId);
 
-    // Method 2: Try currentUser() if auth() didn't work
-    if (!userId) {
-      try {
-        const user = await currentUser();
-        userId = user?.id || null;
-        console.log('Gallery API: currentUser() result:', userId ? 'found userId' : 'no userId');
-      } catch (error) {
-        console.log('Gallery API: currentUser() failed:', error);
-      }
-    }
-
-    // Method 3: Check Authorization header as fallback
-    if (!userId) {
-      const authorization = request.headers.get('authorization');
-      console.log('Gallery API: Authorization header present:', !!authorization);
-
-      if (authorization) {
-        // This is a temporary debug - in production we'd validate the token properly
-        console.log('Gallery API: Found authorization header, but need proper token validation');
-      }
-    }
-
-    if (!userId) {
-      console.log('Gallery API: All auth methods failed - returning 401');
+    if (!clientUserId) {
+      console.log('Gallery API: No client userId header found');
       return NextResponse.json({
         success: false,
         error: 'Authentication required. Please sign in to view your gallery.',
@@ -62,7 +34,8 @@ export async function GET(request: NextRequest) {
       }, { status: 401 });
     }
 
-    console.log('Gallery API: User authenticated with ID:', userId);
+    const userId = clientUserId;
+    console.log('Gallery API: Using client-provided userId:', userId);
 
     // Get user from database to get the internal user ID
     const { data: user, error: userError } = await supabase

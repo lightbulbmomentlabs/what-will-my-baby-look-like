@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 export interface GalleryImage {
   id: string;
@@ -28,6 +28,7 @@ export interface GalleryState {
 
 export function useGalleryImages() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   const [state, setState] = useState<GalleryState>({
     isLoading: true,
     images: [],
@@ -36,7 +37,7 @@ export function useGalleryImages() {
   });
 
   useEffect(() => {
-    if (!isLoaded) {
+    if (!isLoaded || !user) {
       return;
     }
 
@@ -51,13 +52,21 @@ export function useGalleryImages() {
     }
 
     fetchGalleryImages();
-  }, [isSignedIn, isLoaded]);
+  }, [isSignedIn, isLoaded, user]);
 
   const fetchGalleryImages = async () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch('/api/gallery');
+      // TEMPORARY: Send userId in headers to bypass server-side auth issues
+      const headers: Record<string, string> = {};
+      if (user?.id) {
+        headers['x-clerk-user-id'] = user.id;
+      }
+
+      const response = await fetch('/api/gallery', {
+        headers,
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -81,7 +90,7 @@ export function useGalleryImages() {
   };
 
   const refetch = () => {
-    if (isSignedIn) {
+    if (isSignedIn && user?.id) {
       fetchGalleryImages();
     }
   };
