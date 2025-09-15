@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 // Define routes that require authentication
 const isProtectedPageRoute = createRouteMatcher([
   '/dashboard(.*)',
-  '/gallery(.*)',
+  // Temporarily remove gallery from middleware protection
+  // '/gallery(.*)',
 ]);
 
 // Define API routes that require auth but should return JSON errors
