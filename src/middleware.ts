@@ -38,9 +38,16 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  // Handle protected page routes - allow redirect to sign-in
+  // Handle protected page routes - check auth without forcing redirect
   if (isProtectedPageRoute(req)) {
-    await auth.protect();
+    const { userId } = await auth();
+    if (!userId) {
+      // Only redirect if user is truly not authenticated
+      // Use the current domain for sign-in URL to avoid subdomain issues
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 });
 

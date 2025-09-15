@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { GalleryGrid } from '@/components/gallery/gallery-grid';
@@ -9,12 +11,39 @@ import { trackPageView } from '@/lib/supabase';
 import { Images, Sparkles } from 'lucide-react';
 
 export default function GalleryPage() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const router = useRouter();
   const { images, isLoading, error, count, refetch } = useGalleryImages();
+
+  // Handle client-side authentication redirect
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in?redirect_url=' + encodeURIComponent(window.location.pathname));
+    }
+  }, [isSignedIn, isLoaded, router]);
 
   // Track page view for analytics
   useEffect(() => {
-    trackPageView('gallery');
-  }, []);
+    if (isSignedIn) {
+      trackPageView('gallery');
+    }
+  }, [isSignedIn]);
+
+  // Show loading while checking auth
+  if (!isLoaded || (!isSignedIn && isLoaded)) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
