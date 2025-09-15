@@ -4,11 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { generateBabyImage, checkReplicateStatus } from '@/lib/replicate-client';
 import { trackGeneration, saveGeneratedImage } from '@/lib/supabase';
 import { hasEnoughCredits, deductCredits, getOrCreateUser } from '@/lib/credits';
 import { storeImagePermanently } from '@/lib/image-storage';
+import { authenticateApiRequest, createAuthErrorResponse } from '@/lib/api-auth';
 
 // Credits required per generation
 const CREDITS_PER_GENERATION = 1;
@@ -57,16 +58,14 @@ function checkRateLimit(sessionId: string): { allowed: boolean; resetTime: numbe
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const { userId } = await auth();
-    
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required. Please sign in to generate baby images.',
-        requiresAuth: true,
-      }, { status: 401 });
+    // Authenticate the request using robust multi-method approach
+    const authResult = await authenticateApiRequest(request);
+
+    if (!authResult.success || !authResult.userId) {
+      return NextResponse.json(createAuthErrorResponse(authResult), { status: 401 });
     }
+
+    const { userId } = authResult;
 
     // Check rate limiting
     const rateLimit = checkRateLimit(userId);
@@ -313,7 +312,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   // Health check endpoint
   try {
-    const { userId } = await auth();
+    // Try to authenticate, but this endpoint should work without auth for health checks
+    const authResult = await authenticateApiRequest(request);
+    const userId = authResult.success ? authResult.userId : null;
     const serviceStatus = await checkReplicateStatus();
     
     let userCredits = null;

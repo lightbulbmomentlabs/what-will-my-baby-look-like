@@ -20,8 +20,8 @@ export async function GET() {
         message: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? 'Clerk configured' : 'Clerk configuration missing'
       },
       supabase_env: {
-        status: process.env.SUPABASE_URL ? 'OK' : 'MISSING',
-        message: process.env.SUPABASE_URL ? 'Supabase configured' : 'Supabase configuration missing'  
+        status: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'OK' : 'MISSING',
+        message: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Supabase configured' : 'Supabase configuration missing'
       },
       replicate_env: {
         status: process.env.REPLICATE_API_TOKEN ? 'OK' : 'MISSING',

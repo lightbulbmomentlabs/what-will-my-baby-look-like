@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
+import { useAuthenticatedFetch } from '@/lib/api-client';
 
 export interface GalleryImage {
   id: string;
@@ -29,6 +30,7 @@ export interface GalleryState {
 export function useGalleryImages() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
+  const { fetchWithAuth } = useAuthenticatedFetch();
   const [state, setState] = useState<GalleryState>({
     isLoading: true,
     images: [],
@@ -52,21 +54,13 @@ export function useGalleryImages() {
     }
 
     fetchGalleryImages();
-  }, [isSignedIn, isLoaded, user]);
+  }, [isSignedIn, isLoaded, user, fetchWithAuth]);
 
   const fetchGalleryImages = async () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // TEMPORARY: Send userId in headers to bypass server-side auth issues
-      const headers: Record<string, string> = {};
-      if (user?.id) {
-        headers['x-clerk-user-id'] = user.id;
-      }
-
-      const response = await fetch('/api/gallery', {
-        headers,
-      });
+      const response = await fetchWithAuth('/api/gallery');
       const data = await response.json();
 
       if (!response.ok) {

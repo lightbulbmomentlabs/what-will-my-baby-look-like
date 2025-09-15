@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { getCreditPackage } from '@/lib/credit-constants';
 import { getUserByClerkId } from '@/lib/credits';
 import { getStripeClient } from '@/lib/stripe-client';
+import { authenticateApiRequest, createAuthErrorResponse } from '@/lib/api-auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    // Authenticate the request using robust multi-method approach
+    const authResult = await authenticateApiRequest(req);
 
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required',
-        requiresAuth: true,
-      }, { status: 401 });
+    if (!authResult.success || !authResult.userId) {
+      return NextResponse.json(createAuthErrorResponse(authResult), { status: 401 });
     }
+
+    const { userId } = authResult;
 
     const { packageId } = await req.json();
 

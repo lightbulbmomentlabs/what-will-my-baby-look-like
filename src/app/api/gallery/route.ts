@@ -1,11 +1,13 @@
 /**
  * API Route for fetching user's generated baby images gallery
+ * Enhanced with robust authentication and error handling
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getOrCreateUser } from '@/lib/credits';
+import { authenticateApiRequest, createAuthErrorResponse } from '@/lib/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,23 +22,15 @@ export async function GET(request: NextRequest) {
       }, { status: 503 });
     }
 
-    // TEMPORARY: Get userId from request headers sent by client-side auth
-    // This bypasses server-side auth issues while we investigate
-    const clientUserId = request.headers.get('x-clerk-user-id');
+    // Authenticate the request using robust multi-method approach
+    const authResult = await authenticateApiRequest(request);
 
-    console.log('Gallery API: Client-provided userId:', clientUserId);
-
-    if (!clientUserId) {
-      console.log('Gallery API: No client userId header found');
-      return NextResponse.json({
-        success: false,
-        error: 'Authentication required. Please sign in to view your gallery.',
-        requiresAuth: true,
-      }, { status: 401 });
+    if (!authResult.success || !authResult.userId) {
+      return NextResponse.json(createAuthErrorResponse(authResult), { status: 401 });
     }
 
-    const userId = clientUserId;
-    console.log('Gallery API: Using client-provided userId:', userId);
+    const { userId, authMethod } = authResult;
+    console.log(`Gallery API: Authenticated via ${authMethod}, userId: ${userId}`);
 
     // Get or create user in database (handles case where webhook didn't fire)
     let userResult = await getOrCreateUser(userId);
@@ -70,6 +64,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Unable to access user profile. Please try signing out and back in.',
+        debug: {
+          authMethod,
+          userId,
+          userError: userResult.error
+        }
       }, { status: 404 });
     }
 
@@ -137,7 +136,11 @@ export async function GET(request: NextRequest) {
       success: true,
       images: images || [],
       count: images?.length || 0,
-      debug: stats, // Temporary debug info
+      debug: {
+        authMethod,
+        stats,
+        userId: userId.substring(0, 8) + '...' // Partial user ID for debugging
+      }
     });
 
   } catch (error) {
