@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getOrCreateUser } from '@/lib/credits';
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,23 +38,43 @@ export async function GET(request: NextRequest) {
     const userId = clientUserId;
     console.log('Gallery API: Using client-provided userId:', userId);
 
-    // Get user from database to get the internal user ID
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('clerk_user_id', userId)
-      .single();
+    // Get or create user in database (handles case where webhook didn't fire)
+    let userResult = await getOrCreateUser(userId);
 
-    if (userError || !user) {
-      console.log('Gallery API: User lookup failed for clerk_user_id:', userId);
-      console.log('Gallery API: User error:', userError);
+    // If user doesn't exist and we need to create them, get user info from Clerk
+    if (!userResult.success && userResult.error?.includes('User not found')) {
+      console.log('Gallery API: User not found, attempting to get info from Clerk');
+      try {
+        const clerkUser = await currentUser();
+        if (clerkUser) {
+          const primaryEmail = clerkUser.emailAddresses.find(email => email.id === clerkUser.primaryEmailAddressId);
+          const emailAddress = primaryEmail?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+
+          if (emailAddress) {
+            userResult = await getOrCreateUser(userId, {
+              email: emailAddress,
+              firstName: clerkUser.firstName || undefined,
+              lastName: clerkUser.lastName || undefined,
+            });
+            console.log('Gallery API: Created user with Clerk info');
+          }
+        }
+      } catch (error) {
+        console.log('Gallery API: Failed to get Clerk user info:', error);
+      }
+    }
+
+    if (!userResult.success || !userResult.user) {
+      console.log('Gallery API: Failed to get/create user for clerk_user_id:', userId);
+      console.log('Gallery API: User error:', userResult.error);
       return NextResponse.json({
         success: false,
-        error: 'User profile not found. Please contact support if this persists.',
+        error: 'Unable to access user profile. Please try signing out and back in.',
       }, { status: 404 });
     }
 
-    console.log('Gallery API: Found user with internal ID:', (user as any).id);
+    const user = userResult.user;
+    console.log('Gallery API: Found/created user with internal ID:', user.id);
 
     // Fetch user's generated images - only include images with permanent storage URLs
     const { data: images, error: imagesError } = await supabase
@@ -71,7 +92,7 @@ export async function GET(request: NextRequest) {
         created_at,
         processing_time_ms
       `)
-      .eq('user_id', (user as any).id)
+      .eq('user_id', user.id)
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '')
@@ -91,7 +112,7 @@ export async function GET(request: NextRequest) {
     const { data: allUserImages } = await supabase
       .from('generated_images')
       .select('generation_success, original_image_url')
-      .eq('user_id', (user as any).id);
+      .eq('user_id', user.id);
 
     const stats = {
       total: allUserImages?.length || 0,
