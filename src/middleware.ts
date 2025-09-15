@@ -19,9 +19,22 @@ const isPublicApiRoute = createRouteMatcher([
   '/api/health',
 ]);
 
+// Define Clerk routes that should be handled by Clerk's default middleware
+const isClerkRoute = createRouteMatcher([
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/sso-callback(.*)',
+  '/user-profile(.*)',
+]);
+
 export default clerkMiddleware(async (auth, req) => {
   // Allow public API routes
   if (isPublicApiRoute(req)) {
+    return;
+  }
+
+  // Allow Clerk routes to be handled by Clerk's default middleware
+  if (isClerkRoute(req)) {
     return;
   }
 
@@ -38,20 +51,9 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  // Handle protected page routes - check auth without forcing redirect
+  // Handle protected page routes - use Clerk's built-in protection
   if (isProtectedPageRoute(req)) {
-    const { userId } = await auth();
-    if (!userId) {
-      // Only redirect if user is truly not authenticated
-      // Use the current domain for sign-in URL to avoid subdomain issues
-      const signInUrl = new URL('/sign-in', req.url);
-
-      // Use just the pathname for redirect to avoid domain issues
-      const redirectPath = req.nextUrl.pathname + req.nextUrl.search;
-      signInUrl.searchParams.set('redirect_url', redirectPath);
-
-      return NextResponse.redirect(signInUrl);
-    }
+    await auth.protect();
   }
 });
 
