@@ -11,15 +11,26 @@ import { currentUser } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate the request
+    // Try to authenticate, but also allow access for debugging purposes
     const authResult = await authenticateApiRequest(request);
 
+    // If authentication completely fails, provide diagnostic info
     if (!authResult.success || !authResult.userId) {
       return NextResponse.json({
         success: false,
-        error: 'Authentication required',
-        debug: { authMethod: authResult.authMethod }
-      }, { status: 401 });
+        error: 'Authentication failed - showing diagnostic info',
+        debug: {
+          authMethod: authResult.authMethod,
+          authError: authResult.error,
+          message: 'All authentication methods failed. This suggests either Clerk configuration issues or the user is not properly signed in.',
+          troubleshooting: {
+            step1: 'Verify you are signed in to the website',
+            step2: 'Check if Clerk authentication is working on other parts of the site',
+            step3: 'Try signing out and back in',
+            step4: 'Contact support if issue persists'
+          }
+        }
+      }, { status: 200 }); // Return 200 so browser shows the debug info
     }
 
     const { userId, authMethod } = authResult;
