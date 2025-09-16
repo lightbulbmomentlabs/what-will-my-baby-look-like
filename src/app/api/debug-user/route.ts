@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
           email: `user-${userId.substring(5, 15)}@temp.placeholder`, // Temporary placeholder
           first_name: 'User',
           last_name: 'Account',
-          credits: 5, // Give them some credits to start
+          credits: 1, // Give them initial credit to start
         })
         .select()
         .single();
