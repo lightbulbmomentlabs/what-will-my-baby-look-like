@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { useAuthenticatedFetch } from '@/lib/api-client';
 
 export interface UserCreditsState {
   isLoading: boolean;
@@ -14,6 +15,7 @@ export interface UserCreditsState {
 
 export function useUserCredits() {
   const { isSignedIn, isLoaded } = useAuth();
+  const { fetchWithAuth } = useAuthenticatedFetch();
   const [state, setState] = useState<UserCreditsState>({
     isLoading: true,
     isAuthenticated: false,
@@ -41,14 +43,14 @@ export function useUserCredits() {
     // User is authenticated, fetch their credits with timeout for loading state
     const fetchCredits = async () => {
       try {
-        const response = await fetch('/api/generate-baby');
+        const response = await fetchWithAuth('/api/debug-user');
         const data = await response.json();
-        
-        if (response.ok && data.user?.authenticated && typeof data.user.credits === 'number') {
+
+        if (response.ok && data.success && data.debug?.userCreation?.finalUser?.credits !== undefined) {
           setState({
             isLoading: false,
             isAuthenticated: true,
-            credits: data.user.credits,
+            credits: data.debug.userCreation.finalUser.credits,
             error: null,
           });
         } else if (response.status === 401) {
@@ -90,7 +92,7 @@ export function useUserCredits() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [isSignedIn, isLoaded]);
+  }, [isSignedIn, isLoaded, fetchWithAuth]);
 
   // Function to refetch credits (useful after purchases or generation)
   const refetchCredits = async () => {
@@ -99,17 +101,17 @@ export function useUserCredits() {
 
     console.log('🔄 Setting loading state and fetching credits...');
     setState(prev => ({ ...prev, isLoading: true }));
-    
+
     try {
-      const response = await fetch('/api/generate-baby');
+      const response = await fetchWithAuth('/api/debug-user');
       const data = await response.json();
-      
-      if (data.user?.authenticated && typeof data.user.credits === 'number') {
-        console.log('✅ Successfully fetched updated credits:', data.user.credits);
+
+      if (data.success && data.debug?.userCreation?.finalUser?.credits !== undefined) {
+        console.log('✅ Successfully fetched updated credits:', data.debug.userCreation.finalUser.credits);
         setState({
           isLoading: false,
           isAuthenticated: true,
-          credits: data.user.credits,
+          credits: data.debug.userCreation.finalUser.credits,
           error: null,
         });
       } else {
