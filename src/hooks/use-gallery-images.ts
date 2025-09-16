@@ -2,7 +2,7 @@
  * Hook for fetching and managing user's gallery images
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useAuthenticatedFetch } from '@/lib/api-client';
 
@@ -38,25 +38,7 @@ export function useGalleryImages() {
     count: 0,
   });
 
-  useEffect(() => {
-    if (!isLoaded || !user) {
-      return;
-    }
-
-    if (!isSignedIn) {
-      setState({
-        isLoading: false,
-        images: [],
-        error: 'User not authenticated',
-        count: 0,
-      });
-      return;
-    }
-
-    fetchGalleryImages();
-  }, [isSignedIn, isLoaded, user, fetchWithAuth]);
-
-  const fetchGalleryImages = async () => {
+  const fetchGalleryImages = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -81,7 +63,25 @@ export function useGalleryImages() {
         error: error instanceof Error ? error.message : 'Failed to fetch gallery images',
       }));
     }
-  };
+  }, [fetchWithAuth]);
+
+  useEffect(() => {
+    if (!isLoaded || !user) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      setState({
+        isLoading: false,
+        images: [],
+        error: 'User not authenticated',
+        count: 0,
+      });
+      return;
+    }
+
+    fetchGalleryImages();
+  }, [isSignedIn, isLoaded, user, fetchGalleryImages]);
 
   const refetch = () => {
     if (isSignedIn && user?.id) {

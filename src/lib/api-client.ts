@@ -4,6 +4,7 @@
  */
 
 import { useUser } from '@clerk/nextjs';
+import { useCallback } from 'react';
 
 /**
  * Creates authenticated headers for API requests
@@ -26,7 +27,7 @@ export function getAuthHeaders(userId?: string): Record<string, string> {
 export function useAuthenticatedFetch() {
   const { user } = useUser();
 
-  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const fetchWithAuth = useCallback(async (url: string, options: RequestInit = {}) => {
     const headers = getAuthHeaders(user?.id);
 
     return fetch(url, {
@@ -36,7 +37,7 @@ export function useAuthenticatedFetch() {
         ...(options.headers || {}),
       },
     });
-  };
+  }, [user?.id]);
 
   return { fetchWithAuth, userId: user?.id };
 }
