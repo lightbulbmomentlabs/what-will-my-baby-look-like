@@ -56,6 +56,31 @@ export async function GET(request: NextRequest) {
       } catch (error) {
         console.log('Gallery API: Failed to get Clerk user info:', error);
       }
+
+      // If still no user and Clerk is failing, create with minimal data
+      if (!userResult.success && userResult.error?.includes('User not found')) {
+        console.log('Gallery API: Creating user with minimal data due to auth issues');
+        try {
+          const { data: newUser, error: createError } = await (supabase as any)
+            .from('users')
+            .insert({
+              clerk_user_id: userId,
+              email: `user-${userId.substring(5, 15)}@temp.placeholder`,
+              first_name: 'User',
+              last_name: 'Account',
+              credits: 5,
+            })
+            .select()
+            .single();
+
+          if (!createError) {
+            userResult = { success: true, user: newUser };
+            console.log('Gallery API: Successfully created user with minimal data');
+          }
+        } catch (error) {
+          console.log('Gallery API: Failed to create user with minimal data:', error);
+        }
+      }
     }
 
     if (!userResult.success || !userResult.user) {

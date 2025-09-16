@@ -61,11 +61,37 @@ export async function GET(request: NextRequest) {
     const existingUser = existingUsers?.[0] || null;
 
     // Try to get or create user
-    const userResult = await getOrCreateUser(userId, clerkUser ? {
+    let userResult = await getOrCreateUser(userId, clerkUser ? {
       email: clerkUser.emailAddresses[0]?.emailAddress || '',
       firstName: clerkUser.firstName || undefined,
       lastName: clerkUser.lastName || undefined,
     } : undefined);
+
+    // If user creation failed due to missing info, create with minimal data
+    if (!userResult.success && userResult.error?.includes('User not found and no user info provided')) {
+      console.log('Creating user with minimal data due to auth issues');
+
+      // Create user directly in Supabase with minimal data
+      const { data: newUser, error: createError } = await (supabase as any)
+        .from('users')
+        .insert({
+          clerk_user_id: userId,
+          email: `user-${userId.substring(5, 15)}@temp.placeholder`, // Temporary placeholder
+          first_name: 'User',
+          last_name: 'Account',
+          credits: 5, // Give them some credits to start
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Failed to create user with minimal data:', createError);
+        userResult = { success: false, error: createError.message };
+      } else {
+        console.log('Successfully created user with minimal data');
+        userResult = { success: true, user: newUser };
+      }
+    }
 
     // Check user's generated images count
     let imagesCount = 0;
