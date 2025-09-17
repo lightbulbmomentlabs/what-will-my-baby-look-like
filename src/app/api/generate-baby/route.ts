@@ -57,22 +57,35 @@ function checkRateLimit(sessionId: string): { allowed: boolean; resetTime: numbe
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🚀 === BABY GENERATION REQUEST START ===');
+  console.log('📍 Environment:', process.env.NODE_ENV);
+  console.log('🌐 Vercel Environment:', process.env.VERCEL_ENV);
+  console.log('🔑 REPLICATE_API_TOKEN exists:', !!process.env.REPLICATE_API_TOKEN);
+  console.log('🔑 REPLICATE_API_TOKEN length:', process.env.REPLICATE_API_TOKEN?.length || 0);
+
   try {
     // Authenticate the request using robust multi-method approach
+    console.log('🔐 Starting authentication...');
     const authResult = await authenticateApiRequest(request);
+    console.log('🔐 Auth result:', { success: authResult.success, method: authResult.authMethod, hasUserId: !!authResult.userId });
 
     if (!authResult.success || !authResult.userId) {
+      console.log('❌ Authentication failed:', authResult.error);
       return NextResponse.json(createAuthErrorResponse(authResult), { status: 401 });
     }
 
     const { userId } = authResult;
+    console.log('✅ Authentication successful, userId:', userId);
 
     // Check rate limiting
+    console.log('⏰ Checking rate limits...');
     const rateLimit = checkRateLimit(userId);
+    console.log('⏰ Rate limit result:', { allowed: rateLimit.allowed, resetTime: rateLimit.resetTime });
     if (!rateLimit.allowed) {
+      console.log('❌ Rate limit exceeded for user:', userId);
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Too many requests. Please wait a minute before trying again.',
           rateLimited: true,
           resetTime: rateLimit.resetTime,
@@ -80,9 +93,17 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
-    
+
     // Parse request body
+    console.log('📝 Parsing request body...');
     const body = await request.json();
+    console.log('📝 Request body received:', {
+      hasParentImage1: !!body.parentImage1,
+      hasParentImage2: !!body.parentImage2,
+      similarity: body.similarity,
+      age: body.age,
+      gender: body.gender
+    });
     
     // Validate required fields
     const { parentImage1, parentImage2, similarity, age, gender, parent1Name, parent2Name } = body;
@@ -125,8 +146,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure user exists in database (create with free credit if needed)
+    console.log('👤 Getting or creating user...');
     const userResult = await getOrCreateUser(userId);
+    console.log('👤 User result:', { success: userResult.success, error: userResult.error });
     if (!userResult.success) {
+      console.log('❌ Failed to get/create user:', userResult.error);
       return NextResponse.json({
         success: false,
         error: userResult.error || 'Failed to access user account',
@@ -134,8 +158,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has enough credits
+    console.log('💰 Checking user credits...');
     const creditsCheck = await hasEnoughCredits(userId, CREDITS_PER_GENERATION);
+    console.log('💰 Credits check result:', {
+      success: creditsCheck.success,
+      hasCredits: creditsCheck.hasCredits,
+      currentCredits: creditsCheck.currentCredits,
+      error: creditsCheck.error
+    });
     if (!creditsCheck.success) {
+      console.log('❌ Failed to check credits:', creditsCheck.error);
       return NextResponse.json({
         success: false,
         error: creditsCheck.error || 'Failed to check credits',
@@ -143,6 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!creditsCheck.hasCredits) {
+      console.log('❌ Insufficient credits:', creditsCheck.currentCredits, 'need:', CREDITS_PER_GENERATION);
       return NextResponse.json({
         success: false,
         error: `Insufficient credits. You have ${creditsCheck.currentCredits || 0} credits but need ${CREDITS_PER_GENERATION}.`,
@@ -151,10 +184,13 @@ export async function POST(request: NextRequest) {
         requiredCredits: CREDITS_PER_GENERATION,
       }, { status: 402 }); // 402 Payment Required
     }
-    
+
     // Check Replicate service status
+    console.log('🤖 Checking Replicate service status...');
     const serviceStatus = await checkReplicateStatus();
+    console.log('🤖 Service status:', { available: serviceStatus.available, error: serviceStatus.error });
     if (!serviceStatus.available) {
+      console.log('❌ Replicate service unavailable:', serviceStatus.error);
       return NextResponse.json({
         success: false,
         error: 'AI generation service is currently unavailable. Please try again later.',
@@ -163,6 +199,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Generate baby image
+    console.log('🎨 Starting baby image generation...');
     const generationRequest = {
       parentImage1,
       parentImage2,
@@ -172,8 +209,21 @@ export async function POST(request: NextRequest) {
       parent1Name,
       parent2Name,
     };
-    
+    console.log('🎨 Generation request prepared:', {
+      similarity,
+      age,
+      gender,
+      hasParent1Name: !!parent1Name,
+      hasParent2Name: !!parent2Name
+    });
+
     const result = await generateBabyImage(generationRequest);
+    console.log('🎨 Generation result:', {
+      success: result.success,
+      hasImageUrl: !!result.imageUrl,
+      error: result.error,
+      processingTime: result.processingTime
+    });
     
     // Additional safety check for imageUrl
     if (result.success && result.imageUrl) {
@@ -289,8 +339,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
     
   } catch (error) {
-    console.error('Generation API Error:', error);
-    
+    console.error('💥 === GENERATION API ERROR ===');
+    console.error('💥 Error type:', typeof error);
+    console.error('💥 Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('💥 Error message:', error instanceof Error ? error.message : String(error));
+    console.error('💥 Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('💥 Full error object:', error);
+
     // Track error (don't await to avoid blocking response)
     trackGeneration({
       similarity: 0,
@@ -301,10 +356,14 @@ export async function POST(request: NextRequest) {
     }).catch((trackingError) => {
       console.error('Failed to track generation error:', trackingError);
     });
-    
+
     return NextResponse.json({
       success: false,
       error: 'An unexpected error occurred. Please try again.',
+      debug: {
+        errorType: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      }
     }, { status: 500 });
   }
 }
