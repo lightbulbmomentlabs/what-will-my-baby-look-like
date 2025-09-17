@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { useAuthenticatedFetch } from '@/lib/api-client';
 import type { UploadedImage } from '@/types';
 
 export interface GenerationState {
@@ -109,6 +110,7 @@ function checkDailyLimit(): { withinLimit: boolean; count: number; remaining: nu
  * Custom hook for baby generation
  */
 export function useBabyGeneration(onGenerationSuccess?: () => void) {
+  const { fetchWithAuth } = useAuthenticatedFetch();
   const [state, setState] = useState<GenerationState>({
     isGenerating: false,
     progress: 0,
@@ -182,8 +184,8 @@ export function useBabyGeneration(onGenerationSuccess?: () => void) {
         const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT);
 
         try {
-          // Call generation API
-          const response = await fetch('/api/generate-baby', {
+          // Call generation API with authentication
+          const response = await fetchWithAuth('/api/generate-baby', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -288,7 +290,7 @@ export function useBabyGeneration(onGenerationSuccess?: () => void) {
         await new Promise(resolve => setTimeout(resolve, 2000 + (attempt * 1000))); // Exponential backoff
       }
     }
-  }, [dailyLimit.withinLimit, onGenerationSuccess]);
+  }, [dailyLimit.withinLimit, onGenerationSuccess, fetchWithAuth]);
 
   // Reset generation state
   const resetGeneration = useCallback(() => {
@@ -305,12 +307,12 @@ export function useBabyGeneration(onGenerationSuccess?: () => void) {
   // Get service health info
   const checkServiceHealth = useCallback(async () => {
     try {
-      const response = await fetch('/api/generate-baby');
+      const response = await fetchWithAuth('/api/generate-baby');
       return await response.json();
     } catch (error) {
       return { status: 'error', error: 'Service unavailable' };
     }
-  }, []);
+  }, [fetchWithAuth]);
 
   return {
     ...state,
