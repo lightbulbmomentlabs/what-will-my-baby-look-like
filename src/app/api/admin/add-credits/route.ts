@@ -43,14 +43,16 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    console.log(`👤 Found user: ${user.email}, current credits: ${user.credits}`);
+    // Type assertion to help TypeScript understand the user object structure
+    const userRecord = user as { id: string; email: string; credits: number };
+    console.log(`👤 Found user: ${userRecord.email}, current credits: ${userRecord.credits}`);
 
     // Add credits to the user's account
-    const newCredits = user.credits + credits;
-    const { data: updatedUser, error: updateError } = await supabase
+    const newCredits = userRecord.credits + credits;
+    const { data: updatedUser, error: updateError } = await (supabase as any)
       .from('users')
       .update({ credits: newCredits })
-      .eq('id', user.id)
+      .eq('id', userRecord.id)
       .select('id, email, credits')
       .single();
 
@@ -62,17 +64,18 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log(`✅ Successfully added ${credits} credits. New balance: ${updatedUser.credits}`);
+    const updatedUserRecord = updatedUser as { id: string; email: string; credits: number };
+    console.log(`✅ Successfully added ${credits} credits. New balance: ${updatedUserRecord.credits}`);
 
     return NextResponse.json({
       success: true,
       user: {
-        email: updatedUser.email,
-        previousCredits: user.credits,
+        email: updatedUserRecord.email,
+        previousCredits: userRecord.credits,
         creditsAdded: credits,
-        newCredits: updatedUser.credits
+        newCredits: updatedUserRecord.credits
       },
-      message: `Successfully added ${credits} credits to ${email}. New balance: ${updatedUser.credits}`
+      message: `Successfully added ${credits} credits to ${email}. New balance: ${updatedUserRecord.credits}`
     });
 
   } catch (error) {
