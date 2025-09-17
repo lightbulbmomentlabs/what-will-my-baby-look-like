@@ -7,7 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { HeroSection } from '@/components/features/hero-section';
 import { PhotoUploadSection } from '@/components/features/photo-upload-section';
 import { PurchaseSuccessNotification } from '@/components/notifications/purchase-success-notification';
-import { trackPageView } from '@/lib/supabase';
+import { trackPageView, validateSupabaseConfig } from '@/lib/supabase';
 import { useUserCredits } from '@/hooks/use-user-credits';
 import { getCreditPackage } from '@/lib/credit-constants';
 import {
@@ -93,8 +93,10 @@ export default function Home() {
     totalCredits: number;
   } | null>(null);
 
-  // Track page view for analytics
+  // Track page view for analytics and validate config
   useEffect(() => {
+    // Validate Supabase configuration on app load
+    validateSupabaseConfig();
     trackPageView('home');
   }, []);
 

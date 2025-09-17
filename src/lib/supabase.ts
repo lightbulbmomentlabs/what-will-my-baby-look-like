@@ -6,6 +6,26 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 // Check if Supabase is configured
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
+// Validate Supabase configuration and provide helpful debugging
+export function validateSupabaseConfig() {
+  const config = {
+    hasUrl: !!supabaseUrl,
+    hasAnonKey: !!supabaseAnonKey,
+    urlFormat: supabaseUrl ? supabaseUrl.includes('supabase.co') : false,
+    environment: process.env.NODE_ENV,
+  };
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Supabase Configuration Check:', {
+      ...config,
+      url: supabaseUrl?.substring(0, 30) + '...',
+      keyPrefix: supabaseAnonKey?.substring(0, 20) + '...',
+    });
+  }
+
+  return config;
+}
+
 // Create client only if configured, otherwise create a mock client
 export const supabase = isSupabaseConfigured 
   ? createClient(supabaseUrl!, supabaseAnonKey!, {
@@ -24,7 +44,9 @@ export async function trackEvent(
 ) {
   // Skip tracking if Supabase is not configured
   if (!isSupabaseConfigured || !supabase) {
-    console.warn('Analytics tracking skipped: Supabase not configured');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Analytics tracking skipped: Supabase not configured');
+    }
     return;
   }
 
@@ -46,10 +68,18 @@ export async function trackEvent(
     });
 
     if (error) {
-      console.error('Failed to track event:', error);
+      // Only log analytics errors in development to avoid console spam in production
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to track event:', error);
+      }
+      // In production, silently fail - analytics shouldn't break user experience
     }
   } catch (error) {
-    console.error('Failed to track event:', error);
+    // Only log analytics errors in development to avoid console spam in production
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to track event:', error);
+    }
+    // In production, silently fail - analytics shouldn't break user experience
   }
 }
 
