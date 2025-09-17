@@ -149,10 +149,13 @@ export async function extractImageUrl(output: unknown): Promise<string | null> {
       if (typeof output.toString === 'function') {
         const urlString = output.toString();
         console.log('📁 FileOutput.toString() result:', urlString);
-        
-        if (typeof urlString === 'string' && urlString.startsWith('http')) {
-          console.log('✅ Found URL via FileOutput.toString():', urlString);
-          return urlString;
+
+        if (typeof urlString === 'string') {
+          const trimmedUrl = urlString.trim();
+          if (trimmedUrl.startsWith('http')) {
+            console.log('✅ Found URL via FileOutput.toString():', trimmedUrl);
+            return trimmedUrl;
+          }
         }
       }
       
@@ -248,10 +251,13 @@ export async function extractImageUrl(output: unknown): Promise<string | null> {
       try {
         const stringified = output.toString();
         console.log('🔄 toString() result:', stringified);
-        
-        if (stringified.startsWith('http')) {
-          console.log('✅ Found URL via toString():', stringified);
-          return stringified;
+
+        if (typeof stringified === 'string') {
+          const trimmedUrl = stringified.trim();
+          if (trimmedUrl.startsWith('http')) {
+            console.log('✅ Found URL via toString():', trimmedUrl);
+            return trimmedUrl;
+          }
         }
       } catch (e) {
         console.log('❌ toString() failed:', e);

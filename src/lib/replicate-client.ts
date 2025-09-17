@@ -630,9 +630,12 @@ async function extractImageUrlWithFallbacks(output: unknown): Promise<string | n
   // Strategy 1: Try our robust extraction function first
   try {
     const url = await extractImageUrl(output);
-    if (url && url.startsWith('http')) {
-      console.log('✅ Strategy 1 (extractImageUrl) succeeded:', url);
-      return url;
+    if (url && typeof url === 'string') {
+      const trimmedUrl = url.trim();
+      if (trimmedUrl.startsWith('http')) {
+        console.log('✅ Strategy 1 (extractImageUrl) succeeded:', trimmedUrl);
+        return trimmedUrl;
+      }
     }
   } catch (error) {
     console.log('❌ Strategy 1 failed:', error);
@@ -677,9 +680,12 @@ async function extractImageUrlWithFallbacks(output: unknown): Promise<string | n
   }
   
   // Strategy 3: Simple string or direct URL
-  if (typeof output === 'string' && output.startsWith('http')) {
-    console.log('✅ Strategy 3 succeeded: direct string URL');
-    return output;
+  if (typeof output === 'string') {
+    const trimmedUrl = output.trim();
+    if (trimmedUrl.startsWith('http')) {
+      console.log('✅ Strategy 3 succeeded: direct string URL');
+      return trimmedUrl;
+    }
   }
   
   console.log('❌ All extraction strategies failed');
