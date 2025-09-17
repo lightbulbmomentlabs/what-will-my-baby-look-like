@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     const user = userResult.user;
     console.log('Gallery API: Found/created user with internal ID:', user.id);
 
-    // Fetch user's generated images - only include images with permanent storage URLs
+    // Fetch user's generated images - include ALL successful generations with valid URLs
     const { data: images, error: imagesError } = await supabase
       .from('generated_images')
       .select(`
@@ -120,8 +120,6 @@ export async function GET(request: NextRequest) {
       .eq('generation_success', true)
       .not('original_image_url', 'is', null)
       .not('original_image_url', 'eq', '')
-      // Only include images with permanent Supabase storage URLs, not temporary Replicate URLs
-      .like('original_image_url', '%supabase%')
       .order('created_at', { ascending: false });
 
     if (imagesError) {
@@ -143,6 +141,8 @@ export async function GET(request: NextRequest) {
       successful: allUserImages?.filter((img: any) => img.generation_success).length || 0,
       withUrls: allUserImages?.filter((img: any) => img.original_image_url && img.original_image_url !== '').length || 0,
       successfulWithUrls: allUserImages?.filter((img: any) => img.generation_success && img.original_image_url && img.original_image_url !== '').length || 0,
+      supabaseUrls: allUserImages?.filter((img: any) => img.generation_success && img.original_image_url && img.original_image_url.includes('supabase')).length || 0,
+      replicateUrls: allUserImages?.filter((img: any) => img.generation_success && img.original_image_url && img.original_image_url.includes('replicate')).length || 0,
     };
 
     console.log('Gallery Debug Stats:', stats);
