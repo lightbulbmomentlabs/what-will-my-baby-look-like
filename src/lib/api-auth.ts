@@ -63,10 +63,13 @@ export async function authenticateApiRequest(request: NextRequest): Promise<Auth
             const jwtPart = clerkCookie.split('=')[1];
             if (jwtPart) {
               const payload = JSON.parse(Buffer.from(jwtPart.split('.')[1], 'base64').toString());
-              userId = payload.sub;
-              authMethod = 'cookie-jwt';
-              console.log('🔐 API Auth: Extracted user ID from JWT cookie:', userId?.substring(0, 8) + '...');
-              return { success: true, userId, authMethod };
+              const extractedUserId = payload.sub;
+              if (extractedUserId) {
+                userId = extractedUserId;
+                authMethod = 'cookie-jwt';
+                console.log('🔐 API Auth: Extracted user ID from JWT cookie:', userId.substring(0, 8) + '...');
+                return { success: true, userId, authMethod };
+              }
             }
           } catch (e) {
             console.log('🔐 API Auth: Could not parse JWT from cookie:', e);
