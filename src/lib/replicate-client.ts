@@ -630,15 +630,21 @@ async function extractImageUrlWithFallbacks(output: unknown): Promise<string | n
   // Strategy 1: Try our robust extraction function first
   try {
     const url = await extractImageUrl(output);
+    console.log('🔍 Strategy 1 - extractImageUrl returned:', { url, type: typeof url, length: url?.length });
     if (url && typeof url === 'string') {
       const trimmedUrl = url.trim();
+      console.log('🔍 Strategy 1 - trimmed URL:', { trimmedUrl, startsWithHttp: trimmedUrl.startsWith('http') });
       if (trimmedUrl.startsWith('http')) {
         console.log('✅ Strategy 1 (extractImageUrl) succeeded:', trimmedUrl);
         return trimmedUrl;
+      } else {
+        console.log('❌ Strategy 1 - URL does not start with http:', trimmedUrl);
       }
+    } else {
+      console.log('❌ Strategy 1 - URL is not a valid string:', { url, type: typeof url });
     }
   } catch (error) {
-    console.log('❌ Strategy 1 failed:', error);
+    console.log('❌ Strategy 1 failed with error:', error);
   }
   
   // Strategy 2: Direct ReadableStream handling (most common case)

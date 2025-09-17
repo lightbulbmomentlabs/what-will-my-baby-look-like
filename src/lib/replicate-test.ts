@@ -141,22 +141,32 @@ export async function extractImageUrl(output: unknown): Promise<string | null> {
     console.log('📦 Own properties:', Object.getOwnPropertyNames(output));
     console.log('📦 Has own properties:', Object.keys(output).length > 0);
 
-    // Check if it's a FileOutput object from Replicate
-    if (output.constructor && output.constructor.name === 'FileOutput') {
-      console.log('📁 Found FileOutput object, attempting to extract URL...');
-      
+    // Check if it's a FileOutput object from Replicate (also check for minified names like 'f')
+    const constructorName = output.constructor?.name;
+    const isFileOutput = constructorName === 'FileOutput' || constructorName === 'f';
+
+    if (output.constructor && isFileOutput) {
+      console.log('📁 Found FileOutput-like object:', constructorName, 'attempting to extract URL...');
+
       // For FileOutput objects, the toString() method returns the URL
       if (typeof output.toString === 'function') {
         const urlString = output.toString();
-        console.log('📁 FileOutput.toString() result:', urlString);
+        console.log('📁 FileOutput.toString() result:', urlString, 'type:', typeof urlString);
 
         if (typeof urlString === 'string') {
           const trimmedUrl = urlString.trim();
+          console.log('📁 Trimmed URL:', trimmedUrl, 'starts with http:', trimmedUrl.startsWith('http'));
           if (trimmedUrl.startsWith('http')) {
             console.log('✅ Found URL via FileOutput.toString():', trimmedUrl);
             return trimmedUrl;
+          } else {
+            console.log('❌ FileOutput toString() result does not start with http:', trimmedUrl);
           }
+        } else {
+          console.log('❌ FileOutput toString() did not return a string:', typeof urlString, urlString);
         }
+      } else {
+        console.log('❌ FileOutput object does not have toString method');
       }
       
       // Fallback: check for url property (but avoid the function)
