@@ -64,10 +64,10 @@ export async function authenticateApiRequest(request: NextRequest): Promise<Auth
             if (jwtPart) {
               const payload = JSON.parse(Buffer.from(jwtPart.split('.')[1], 'base64').toString());
               const extractedUserId = payload.sub;
-              if (extractedUserId) {
+              if (extractedUserId && typeof extractedUserId === 'string') {
                 userId = extractedUserId;
                 authMethod = 'cookie-jwt';
-                console.log('🔐 API Auth: Extracted user ID from JWT cookie:', userId.substring(0, 8) + '...');
+                console.log('🔐 API Auth: Extracted user ID from JWT cookie:', extractedUserId.substring(0, 8) + '...');
                 return { success: true, userId, authMethod };
               }
             }
