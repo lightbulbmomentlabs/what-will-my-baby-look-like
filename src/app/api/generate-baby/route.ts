@@ -27,34 +27,6 @@ function validateImageData(imageData: string): boolean {
   return base64Regex.test(imageData);
 }
 
-/**
- * Rate limiting check (simple in-memory store for demo)
- * In production, you'd want to use Redis or similar
- */
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(sessionId: string): { allowed: boolean; resetTime: number } {
-  const now = Date.now();
-  const windowMs = 60 * 1000; // 1 minute window
-  const maxRequests = 3; // Max 3 requests per minute
-  
-  const userLimit = rateLimitStore.get(sessionId);
-  
-  if (!userLimit || now > userLimit.resetTime) {
-    // New window
-    rateLimitStore.set(sessionId, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, resetTime: now + windowMs };
-  }
-  
-  if (userLimit.count >= maxRequests) {
-    return { allowed: false, resetTime: userLimit.resetTime };
-  }
-  
-  // Increment count
-  userLimit.count++;
-  rateLimitStore.set(sessionId, userLimit);
-  return { allowed: true, resetTime: userLimit.resetTime };
-}
 
 export async function POST(request: NextRequest) {
   console.log('🚀 === BABY GENERATION REQUEST START ===');
@@ -77,22 +49,6 @@ export async function POST(request: NextRequest) {
     const { userId } = authResult;
     console.log('✅ Authentication successful, userId:', userId);
 
-    // Check rate limiting
-    console.log('⏰ Checking rate limits...');
-    const rateLimit = checkRateLimit(userId);
-    console.log('⏰ Rate limit result:', { allowed: rateLimit.allowed, resetTime: rateLimit.resetTime });
-    if (!rateLimit.allowed) {
-      console.log('❌ Rate limit exceeded for user:', userId);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Too many requests. Please wait a minute before trying again.',
-          rateLimited: true,
-          resetTime: rateLimit.resetTime,
-        },
-        { status: 429 }
-      );
-    }
 
     // Parse request body
     console.log('📝 Parsing request body...');
