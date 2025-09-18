@@ -70,6 +70,24 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                // Fix hash fragment SSO callback URLs
+                (function() {
+                  if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('/sso-callback')) {
+                    console.log('Hash fragment SSO callback detected, fixing URL...');
+                    const hashPart = window.location.hash.substring(1);
+                    const newUrl = window.location.origin + '/' + hashPart;
+                    console.log('Redirecting from', window.location.href, 'to', newUrl);
+                    window.location.replace(newUrl);
+                  }
+                })();
+              `,
+            }}
+          />
+        </head>
         <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
           <ThemeProvider
             attribute="class"

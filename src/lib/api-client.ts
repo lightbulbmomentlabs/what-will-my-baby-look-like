@@ -28,22 +28,11 @@ export function useAuthenticatedFetch() {
   const { user } = useUser();
 
   const fetchWithAuth = useCallback(async (url: string, options: RequestInit = {}) => {
-    console.log('🔐 [useAuthenticatedFetch] Called with URL:', url);
-    console.log('🔐 [useAuthenticatedFetch] user object:', {
-      id: user?.id,
-      exists: !!user,
-      email: user?.emailAddresses?.[0]?.emailAddress,
-      firstName: user?.firstName
-    });
-
     // Try multiple methods to get user ID for robust authentication
     let userId = user?.id;
-    let authMethod = 'clerk-user-object';
 
     // Fallback: If user.id is undefined, try to get from session or JWT
     if (!userId && typeof window !== 'undefined') {
-      console.log('🔐 [useAuthenticatedFetch] User ID not found in user object, trying fallbacks...');
-
       // Try to get user ID from Clerk session in cookies
       const cookies = document.cookie.split(';').map(c => c.trim());
       const clerkCookie = cookies.find(c => c.includes('__clerk_db_jwt'));
@@ -55,28 +44,14 @@ export function useAuthenticatedFetch() {
           if (jwtPart) {
             const payload = JSON.parse(atob(jwtPart.split('.')[1]));
             userId = payload.sub;
-            authMethod = 'jwt-cookie-fallback';
-            console.log('🔐 [useAuthenticatedFetch] Found user ID in JWT:', userId?.substring(0, 8) + '...');
           }
         } catch (e) {
-          console.log('🔐 [useAuthenticatedFetch] Could not extract user ID from JWT:', e);
-          authMethod = 'failed';
+          // Silent fallback failure
         }
-      } else {
-        console.log('🔐 [useAuthenticatedFetch] No Clerk JWT cookie found');
-        authMethod = 'no-jwt-cookie';
       }
     }
 
     const headers = getAuthHeaders(userId);
-    console.log('🔐 [useAuthenticatedFetch] Final request details:', {
-      hasUserId: !!userId,
-      userId: userId?.substring(0, 8) + '...',
-      authMethod,
-      hasUserIdHeader: !!headers['x-clerk-user-id'],
-      headers: headers,
-      url
-    });
 
     return fetch(url, {
       ...options,
