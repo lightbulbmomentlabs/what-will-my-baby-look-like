@@ -140,7 +140,7 @@ export function Header() {
                         <span className="font-medium">{displayName}</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-gray-900">
                       <DropdownMenuItem asChild>
                         <Link href="/gallery" className="flex items-center gap-2 cursor-pointer">
                           <Images className="w-4 h-4" />

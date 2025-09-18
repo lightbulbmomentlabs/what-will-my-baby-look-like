@@ -137,7 +137,7 @@ export function BuyCreditsModal({ isOpen, onClose, currentCredits = 0, onCredits
                       : "border-gray-300 dark:border-gray-500"
                   )}>
                     {selectedPackage === pkg.id && (
-                      <Check className="w-4 h-4 text-white" />
+                      <Check className="w-4 h-4 text-primary-foreground" />
                     )}
                   </div>
                 </div>
@@ -159,7 +159,7 @@ export function BuyCreditsModal({ isOpen, onClose, currentCredits = 0, onCredits
             <Button
               onClick={() => handlePurchase(selectedPackage)}
               disabled={isProcessing}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
               size="lg"
             >
               <CreditCard className="w-4 h-4 mr-2" />
