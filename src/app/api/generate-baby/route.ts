@@ -257,8 +257,20 @@ export async function POST(request: NextRequest) {
       });
 
       // Get user info for saving generation
+      console.log('👤 Getting user for generation save...');
       const userResult = await getOrCreateUser(userId);
+      console.log('👤 User result for save:', { success: userResult.success, hasUser: !!userResult.user });
+
+      if (!userResult.success || !userResult.user) {
+        console.error('❌ Failed to get user for generation save:', userResult.error);
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to link generation to user account',
+        }, { status: 500 });
+      }
+
       const user = userResult.user;
+      console.log('👤 User for generation save:', { id: user.id, email: user.email });
 
       // Store image permanently in Supabase Storage
       let finalImageUrl = result.imageUrl || '';
@@ -284,6 +296,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Save generated image metadata to Supabase with user ID
+      console.log('💾 Saving generation metadata with user ID:', user.id);
       await saveGeneratedImage({
         sessionId: userId, // Use user ID as session ID
         babyName: result.babyName?.name,
@@ -296,7 +309,7 @@ export async function POST(request: NextRequest) {
         originalImageUrl: finalImageUrl,
         processingTime: result.processingTime,
         success: true,
-        userId: user?.id, // Add user ID to the generation record
+        userId: user.id, // Ensure we have a valid user ID
         creditsUsed: CREDITS_PER_GENERATION,
       });
 
@@ -316,24 +329,34 @@ export async function POST(request: NextRequest) {
       });
 
       // Get user info for saving generation
+      console.log('👤 Getting user for failed generation save...');
       const userResult = await getOrCreateUser(userId);
-      const user = userResult.user;
+      console.log('👤 User result for failed save:', { success: userResult.success, hasUser: !!userResult.user });
 
-      // Save failed generation metadata (no credits deducted)
-      await saveGeneratedImage({
-        sessionId: userId, // Use user ID as session ID
-        similarity,
-        age,
-        gender,
-        parent1Name,
-        parent2Name,
-        originalImageUrl: '',
-        processingTime: result.processingTime,
-        success: false,
-        error: result.error,
-        userId: user?.id,
-        creditsUsed: 0, // No credits deducted for failed generations
-      });
+      if (!userResult.success || !userResult.user) {
+        console.error('❌ Failed to get user for failed generation save:', userResult.error);
+        // Don't return error for failed generation saves, just log it
+      } else {
+        const user = userResult.user;
+        console.log('👤 User for failed generation save:', { id: user.id, email: user.email });
+
+        // Save failed generation metadata (no credits deducted)
+        console.log('💾 Saving failed generation metadata with user ID:', user.id);
+        await saveGeneratedImage({
+          sessionId: userId, // Use user ID as session ID
+          similarity,
+          age,
+          gender,
+          parent1Name,
+          parent2Name,
+          originalImageUrl: '',
+          processingTime: result.processingTime,
+          success: false,
+          error: result.error,
+          userId: user.id, // Ensure we have a valid user ID
+          creditsUsed: 0, // No credits deducted for failed generations
+        });
+      }
     }
     
     return NextResponse.json(result);
