@@ -38,7 +38,7 @@ export default function DebugGalleryPage() {
     setDebugInfo(prev => ({
       ...prev,
       authLoaded: isLoaded,
-      isSignedIn,
+      isSignedIn: isSignedIn || false,
       userId: user?.id,
       userEmail: user?.emailAddresses?.[0]?.emailAddress,
     }));
