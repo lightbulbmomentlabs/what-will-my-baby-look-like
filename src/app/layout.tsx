@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     description: APP_CONFIG.description,
     images: [
       {
-        url: `${APP_CONFIG.url}/og-image.png`,
+        url: `${APP_CONFIG.url}/wwmbll-feat-image.jpg`,
         width: 1200,
         height: 630,
         alt: APP_CONFIG.name,
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: APP_CONFIG.name,
     description: APP_CONFIG.description,
-    images: [`${APP_CONFIG.url}/og-image.png`],
+    images: [`${APP_CONFIG.url}/wwmbll-feat-image.jpg`],
     creator: '@babypredictorapp',
   },
   icons: {
