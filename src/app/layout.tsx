@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     description: APP_CONFIG.description,
     images: [
       {
-        url: 'https://whatwillmybabylooklike.com/assets/wwmbll-feat-image.jpg',
+        url: 'https://whatwillmybabylooklike.com/wwmbll-feat-image.jpg',
         width: 1200,
         height: 630,
         alt: APP_CONFIG.name,
@@ -51,18 +51,19 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: APP_CONFIG.name,
     description: APP_CONFIG.description,
-    images: ['https://whatwillmybabylooklike.com/assets/wwmbll-feat-image.jpg'],
+    images: ['https://whatwillmybabylooklike.com/wwmbll-feat-image.jpg'],
     creator: '@babypredictorapp',
   },
   icons: {
     icon: [
-      { url: 'https://whatwillmybabylooklike.com/assets/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: 'https://whatwillmybabylooklike.com/assets/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: 'https://whatwillmybabylooklike.com/assets/favicon-48x48.png', sizes: '48x48', type: 'image/png' },
-      { url: 'https://whatwillmybabylooklike.com/assets/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/android-chrome-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/android-chrome-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     shortcut: '/favicon.ico',
-    apple: 'https://whatwillmybabylooklike.com/assets/apple-touch-icon.png',
+    apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
 };

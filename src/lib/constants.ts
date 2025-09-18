@@ -7,7 +7,7 @@ export const APP_CONFIG = {
   description:
     'AI baby generator uses your photos to predict what your baby will look like. Upload photos instantly to see your future baby with our scientifically accurate baby face generator. Try your first generation free!',
   url: 'https://whatwillmybabylooklike.com',
-  ogImage: 'https://whatwillmybabylooklike.com/assets/wwmbll-feat-image.jpg',
+  ogImage: 'https://whatwillmybabylooklike.com/wwmbll-feat-image.jpg',
   keywords: [
     'AI baby generator',
     'baby face generator',
