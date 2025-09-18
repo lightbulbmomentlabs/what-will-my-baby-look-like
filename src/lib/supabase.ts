@@ -134,10 +134,14 @@ export interface GeneratedImageData {
  * Save generated image metadata to database
  */
 export async function saveGeneratedImage(data: GeneratedImageData) {
-  // Skip saving if Supabase is not configured
-  if (!isSupabaseConfigured || !supabase) {
-    console.warn('Image metadata save skipped: Supabase not configured');
-    return { success: false, error: 'Supabase not configured' };
+  // Import the admin client here to avoid circular imports
+  const { supabaseAdmin } = await import('@/lib/supabase-admin');
+  const adminClient = supabaseAdmin();
+
+  // Skip saving if Supabase admin is not configured
+  if (!adminClient) {
+    console.warn('Image metadata save skipped: Supabase admin not configured');
+    return { success: false, error: 'Supabase admin not configured' };
   }
 
   try {
@@ -145,7 +149,7 @@ export async function saveGeneratedImage(data: GeneratedImageData) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const { error } = await supabase.from('generated_images').insert({
+    const { error } = await adminClient.from('generated_images').insert({
       session_id: data.sessionId,
       baby_name: data.babyName,
       baby_name_explanation: data.babyNameExplanation,
