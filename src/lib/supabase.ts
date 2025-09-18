@@ -149,7 +149,7 @@ export async function saveGeneratedImage(data: GeneratedImageData) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const { error } = await adminClient.from('generated_images').insert({
+    const { error } = await (adminClient as any).from('generated_images').insert({
       session_id: data.sessionId,
       baby_name: data.babyName,
       baby_name_explanation: data.babyNameExplanation,
