@@ -37,7 +37,7 @@ interface ImageUploadZoneProps {
   onImageUpload: (image: UploadedImage) => void;
   onImageRemove: () => void;
   onNameChange: (name: string) => void;
-  onCropRequest: (image: UploadedImage) => void;
+  onCropRequest: (image: UploadedImage, isAutoTrigger?: boolean) => void;
   disabled?: boolean;
 }
 
@@ -156,7 +156,7 @@ export function ImageUploadZone({
       
       // Auto-launch crop modal after successful upload for better UX
       setTimeout(() => {
-        onCropRequest(uploadedImage);
+        onCropRequest(uploadedImage, true); // isAutoTrigger=true for auto-crop
       }, 100); // Small delay to ensure state updates
     } catch (err) {
       console.error('Image upload failed:', err);

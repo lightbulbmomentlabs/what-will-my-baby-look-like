@@ -20,9 +20,10 @@ interface ImageCropModalProps {
   image: UploadedImage;
   onCropComplete: (croppedImage: UploadedImage) => void;
   onCancel: () => void;
+  isAutoCrop?: boolean;
 }
 
-export function ImageCropModal({ image, onCropComplete, onCancel }: ImageCropModalProps) {
+export function ImageCropModal({ image, onCropComplete, onCancel, isAutoCrop = false }: ImageCropModalProps) {
   const [crop, setCrop] = useState<Crop>({
     unit: '%',
     width: 70,
@@ -137,8 +138,22 @@ export function ImageCropModal({ image, onCropComplete, onCancel }: ImageCropMod
 
   const displayName = image.label === 'you' ? 'Your' : "Your Partner's";
 
+  const handleCancel = () => {
+    if (isAutoCrop) {
+      // Auto-crop mode: remove the image entirely and return to empty state
+      if (image.preview) {
+        URL.revokeObjectURL(image.preview);
+      }
+      if (image.croppedPreview) {
+        URL.revokeObjectURL(image.croppedPreview);
+      }
+    }
+    // For both modes, call the onCancel callback
+    onCancel();
+  };
+
   return (
-    <Dialog open onOpenChange={onCancel}>
+    <Dialog open onOpenChange={handleCancel}>
       <DialogContent className="!max-w-none w-[95vw] md:w-[80vw] lg:w-[60vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -182,22 +197,10 @@ export function ImageCropModal({ image, onCropComplete, onCancel }: ImageCropMod
 
           {/* Right Column - Instructions & Controls (40%) */}
           <div className="lg:col-span-4 space-y-4">
-            <Card className="p-4 bg-white dark:bg-gray-800">
-              <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">
-                Cropping Instructions
-              </h3>
-              <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-400">
-                <li>• Position the crop area over the face</li>
-                <li>• Make sure the face is centered</li>
-                <li>• Include the full head and shoulders</li>
-                <li>• Avoid cutting off important facial features</li>
-              </ul>
-            </Card>
-            
             {/* Action Buttons */}
             <div className="space-y-3">
-              <Button 
-                onClick={handleCropComplete} 
+              <Button
+                onClick={handleCropComplete}
                 disabled={isProcessing || !completedCrop}
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 size="lg"
@@ -210,16 +213,28 @@ export function ImageCropModal({ image, onCropComplete, onCancel }: ImageCropMod
                 ) : (
                   <>
                     <CropIcon className="w-4 h-4 mr-2" />
-                    Apply Crop
+                    Apply Crop to Continue
                   </>
                 )}
               </Button>
-              
-              <Button variant="outline" onClick={onCancel} disabled={isProcessing} className="w-full">
+
+              <Button variant="outline" onClick={handleCancel} disabled={isProcessing} className="w-full">
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
             </div>
+
+            <Card className="p-4 bg-white dark:bg-gray-800">
+              <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">
+                Cropping Instructions
+              </h3>
+              <ul className="text-sm space-y-2 text-gray-600 dark:text-gray-400">
+                <li>• Position the crop area over the face</li>
+                <li>• Make sure the face is centered</li>
+                <li>• Include the full head and shoulders</li>
+                <li>• Avoid cutting off important facial features</li>
+              </ul>
+            </Card>
           </div>
         </div>
 

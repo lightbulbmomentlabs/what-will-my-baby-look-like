@@ -31,6 +31,7 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
   const [youImage, setYouImage] = useState<UploadedImage | undefined>();
   const [partnerImage, setPartnerImage] = useState<UploadedImage | undefined>();
   const [cropModalImage, setCropModalImage] = useState<UploadedImage | undefined>();
+  const [isAutoCrop, setIsAutoCrop] = useState<boolean>(false);
   const [similarity, setSimilarity] = useState<number[]>([SIMILARITY_CONFIG.default]);
   const [selectedAge, setSelectedAge] = useState<string>('2');
   const [selectedGender, setSelectedGender] = useState<string>('random');
@@ -139,8 +140,9 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
     }
   };
 
-  const handleCropRequest = (image: UploadedImage) => {
+  const handleCropRequest = (image: UploadedImage, isAutoTrigger = false) => {
     setCropModalImage(image);
+    setIsAutoCrop(isAutoTrigger);
   };
 
   const handleCropComplete = (croppedImage: UploadedImage) => {
@@ -150,6 +152,21 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
       setPartnerImage(croppedImage);
     }
     setCropModalImage(undefined);
+    setIsAutoCrop(false);
+  };
+
+  const handleCropCancel = () => {
+    if (isAutoCrop && cropModalImage) {
+      // Auto-crop mode: remove the image entirely
+      if (cropModalImage.label === 'you') {
+        setYouImage(undefined);
+      } else {
+        setPartnerImage(undefined);
+      }
+    }
+    // For both modes: close the modal
+    setCropModalImage(undefined);
+    setIsAutoCrop(false);
   };
 
   // Handle successful credit purchase
@@ -342,10 +359,10 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
                         <SelectTrigger className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                           <SelectValue placeholder="Select age" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-900">
                           {AGE_OPTIONS.map((option) => (
-                            <SelectItem 
-                              key={option.value} 
+                            <SelectItem
+                              key={option.value}
                               value={option.value.toString()}
                             >
                               {option.label}
@@ -368,10 +385,10 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
                         <SelectTrigger className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                           <SelectValue placeholder="Select gender" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-white dark:bg-gray-900">
                           {GENDER_OPTIONS.map((option) => (
-                            <SelectItem 
-                              key={option.value} 
+                            <SelectItem
+                              key={option.value}
                               value={option.value}
                             >
                               {option.label}
@@ -464,7 +481,8 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
         <ImageCropModal
           image={cropModalImage}
           onCropComplete={handleCropComplete}
-          onCancel={() => setCropModalImage(undefined)}
+          onCancel={handleCropCancel}
+          isAutoCrop={isAutoCrop}
         />
       )}
 
