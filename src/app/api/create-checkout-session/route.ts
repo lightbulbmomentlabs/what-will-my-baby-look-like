@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
+    // Get the base URL for redirects
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://whatwillmybabylooklike.com';
+
     // Create Stripe checkout session
     const session = await getStripeClient().checkout.sessions.create({
       payment_method_types: ['card'],
@@ -52,7 +55,7 @@ export async function POST(req: NextRequest) {
             product_data: {
               name: creditPackage.name,
               description: `${creditPackage.credits} credits for baby generation`,
-              images: [`http://localhost:3003/images/logo.png`],
+              images: [`${baseUrl}/images/logo.png`],
             },
             unit_amount: creditPackage.price, // Price in cents
           },
@@ -60,8 +63,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       mode: 'payment',
-      success_url: `http://localhost:3003/?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `http://localhost:3003/?canceled=true`,
+      success_url: `${baseUrl}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/?canceled=true`,
       metadata: {
         userId,
         packageId,
