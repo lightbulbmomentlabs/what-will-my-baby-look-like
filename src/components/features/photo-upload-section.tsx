@@ -199,7 +199,7 @@ export function PhotoUploadSection(_props: PhotoUploadSectionProps = {}) {
     if (!isLoaded || !isSignedIn) {
       return {
         disabled: false,
-        text: 'Sign In to Generate',
+        text: 'Sign In/Up to Generate',
         icon: LogIn,
         action: 'sign-in',
       };

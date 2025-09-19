@@ -80,7 +80,7 @@ export function SimpleSignInButton({ className = '' }: { className?: string }) {
     <SignInButton mode="modal">
       <Button className={`bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white ${className}`}>
         <LogIn className="w-4 h-4 mr-2" />
-        Sign In to Generate
+        Sign In/Up to Generate
       </Button>
     </SignInButton>
   );
