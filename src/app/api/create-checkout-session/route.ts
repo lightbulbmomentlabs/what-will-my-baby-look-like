@@ -3,6 +3,7 @@ import { getCreditPackage } from '@/lib/credit-constants';
 import { getUserByClerkId } from '@/lib/credits';
 import { getStripeClient } from '@/lib/stripe-client';
 import { authenticateApiRequest, createAuthErrorResponse } from '@/lib/api-auth';
+import { currentUser } from '@clerk/nextjs/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -42,6 +43,14 @@ export async function POST(req: NextRequest) {
       }, { status: 404 });
     }
 
+    // Get real email from Clerk (instead of potentially stale Supabase email)
+    const clerkUser = await currentUser();
+    const primaryEmail = clerkUser?.emailAddresses.find(email =>
+      email.id === clerkUser.primaryEmailAddressId
+    ) || clerkUser?.emailAddresses[0];
+
+    const customerEmail = primaryEmail?.emailAddress || userResult.user.email;
+
     // Get the base URL for redirects
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://whatwillmybabylooklike.com';
 
@@ -70,7 +79,7 @@ export async function POST(req: NextRequest) {
         packageId,
         credits: creditPackage.credits.toString(),
       },
-      customer_email: userResult.user.email,
+      customer_email: customerEmail,
     });
 
     return NextResponse.json({
