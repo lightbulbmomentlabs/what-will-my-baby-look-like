@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     // Check if email is a placeholder
     if (!emailAddress.includes('temp.placeholder')) {
       // Update user with real email and name
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users')
         .update({
           email: emailAddress,
