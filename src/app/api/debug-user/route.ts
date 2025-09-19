@@ -67,30 +67,10 @@ export async function GET(request: NextRequest) {
       lastName: clerkUser.lastName || undefined,
     } : undefined);
 
-    // If user creation failed due to missing info, create with minimal data
+    // If user creation failed due to missing info, don't create with placeholder email
     if (!userResult.success && userResult.error?.includes('User not found and no user info provided')) {
-      console.log('Creating user with minimal data due to auth issues');
-
-      // Create user directly in Supabase with minimal data
-      const { data: newUser, error: createError } = await (supabase as any)
-        .from('users')
-        .insert({
-          clerk_user_id: userId,
-          email: `user-${userId.substring(5, 15)}@temp.placeholder`, // Temporary placeholder
-          first_name: 'User',
-          last_name: 'Account',
-          credits: 1, // Give them initial credit to start
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Failed to create user with minimal data:', createError);
-        userResult = { success: false, error: createError.message };
-      } else {
-        console.log('Successfully created user with minimal data');
-        userResult = { success: true, user: newUser };
-      }
+      console.log('Cannot create user without real email from Clerk');
+      // Keep the failure - don't create users with fake emails
     }
 
     // Check user's generated images count
