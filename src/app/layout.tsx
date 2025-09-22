@@ -74,7 +74,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+    >
       <html lang="en" suppressHydrationWarning>
         <head>
           {/* Google tag (gtag.js) */}

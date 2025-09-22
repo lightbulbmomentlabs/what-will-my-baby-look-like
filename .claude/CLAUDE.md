@@ -8,7 +8,7 @@ MCPS:
 
 ShadCN - pnpm dlx shadcn@latest mcp init --client claude
 
-Supabase - claude mcp add supabase -s local -e SUPABASE_ACCESS_TOKEN=sbp_ebdf1b90ffb5329a8c9a030a705c3a2167b13337 -- npx -y @supabase/mcp-server-supabase@latest
+
 
 
 Playwright - claude mcp add playwright npx @playwright/mcp@latest
